@@ -1,0 +1,155 @@
+---
+
+# If authselect is enabled, parameters changes should be done
+# using the templates that will be copied to the profile.
+# In here we just ensure key security items are defined as expected
+# The way to check is to do the same as configuring a non-authselect
+# environment and failing if any change is made.
+
+- name: Copy non authselect templates (if authselect is disabled)
+  template:
+    src: "redhat_noauth/{{ item }}.j2"
+    dest: "/etc/pam.d/{{ item }}"
+    force: yes
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - system-auth
+    - password-auth
+  when: not authselect_enabled
+
+
+- name: "Ensure PAM file system-auth is not missing key attributes"
+  pamd:
+    name: system-auth
+    type: "{{ item.type }}"
+    control: "{{ item.control }}"
+    module_path: "{{ item.module }}"
+    module_arguments: "{{ item.arg }}"
+    state: args_present
+  register: pam_cmd_result
+  check_mode: "{{ authselect_enabled }}"
+  failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
+  loop:
+    - { type: password, control: requisite, module: pam_pwquality.so, arg: "enforce_for_root" }
+    - { type: password, control: requisite, module: pam_pwquality.so, arg: "retry={{ auth_retry }}" }
+    - { type: password, control: requisite, module: pam_pwquality.so, arg: "remember={{ auth_remember }}" }
+    - { type: password, control: sufficient, module: pam_unix.so, arg: "sha512" }
+    - { type: password, control: sufficient, module: pam_unix.so, arg: "remember={{ auth_remember }}" }
+
+
+- name: "Ensure PAM file system-auth is not missing key faillock preauth attributes"
+  lineinfile:
+    path: '/etc/pam.d/system-auth'
+    regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+preauth'
+    line: 'auth\1required\2pam_faillock.so preauth silent deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
+    #insertafter: 'auth.*?(pam_faildelay.so|pam_env.so).*?'
+    state: present
+    backrefs: yes
+  register: pam_cmd_result
+  check_mode: "{{ authselect_enabled }}"
+  failed_when: pam_cmd_result.failed or pam_cmd_result.changed
+
+- name: "Ensure PAM file system-auth is not missing key faillock authfail attributes"
+  lineinfile:
+    path: '/etc/pam.d/system-auth'
+    regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+authfail'
+    line: 'auth\1required\2pam_faillock.so authfail deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
+    #insertbefore: 'auth.*?(pam_deny.so).*?'
+    state: present
+    backrefs: yes
+  register: pam_cmd_result
+  check_mode: "{{ authselect_enabled }}"
+  failed_when: pam_cmd_result.failed or pam_cmd_result.changed
+
+- name: "Ensure PAM file system-auth is not missing faillock account entry"
+  lineinfile:
+    path: '/etc/pam.d/system-auth'
+    regexp: 'account(\s+)required(\s+)pam_faillock.so'
+    line: 'account\1required\2pam_faillock.so'
+    #insertbefore: 'account.*?(pam_unix.so).*?'
+    state: present
+    backrefs: yes
+  register: pam_cmd_result
+  check_mode: "{{ authselect_enabled }}"
+  failed_when: pam_cmd_result.failed or pam_cmd_result.changed
+
+
+- name: "Ensure PAM file password-auth is not missing key attributes"
+  pamd:
+    name: password-auth
+    type: "{{ item.type }}"
+    control: "{{ item.control }}"
+    module_path: "{{ item.module }}"
+    module_arguments: "{{ item.arg }}"
+    state: args_present
+  register: pam_cmd_result
+  check_mode: "{{ authselect_enabled }}"
+  failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
+  loop:
+    - { type: password, control: requisite, module: pam_pwquality.so, arg: "enforce_for_root" }
+    - { type: password, control: requisite, module: pam_pwquality.so, arg: "retry={{ auth_retry }}" }
+    - { type: password, control: sufficient, module: pam_unix.so, arg: "sha512" }
+
+- name: "Ensure PAM file password-auth is not missing key faillock preauth attributes"
+  lineinfile:
+    path: '/etc/pam.d/password-auth'
+    regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+preauth.*'
+    line: 'auth\1required\2pam_faillock.so preauth silent deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
+    #insertafter: 'auth.*?(pam_faildelay.so|pam_env.so).*?'
+    state: present
+    backrefs: yes
+  register: pam_cmd_result
+  check_mode: "{{ authselect_enabled }}"
+  failed_when: pam_cmd_result.failed or pam_cmd_result.changed
+
+- name: "Ensure PAM file password-auth is not missing key faillock authfail attributes"
+  lineinfile:
+    path: '/etc/pam.d/password-auth'
+    regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+authfail'
+    line: 'auth\1required\2pam_faillock.so authfail deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
+    #insertbefore: 'auth.*?(pam_deny.so).*?'
+    state: present
+    backrefs: yes
+  register: pam_cmd_result
+  check_mode: "{{ authselect_enabled }}"
+  failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
+
+- name: "Ensure PAM file password-auth is not missing faillock account entry"
+  lineinfile:
+    path: '/etc/pam.d/password-auth'
+    regexp: 'account(\s+)required(\s+)pam_faillock.so'
+    line: 'account\1required\2pam_faillock.so'
+    #insertbefore: 'account.*?(pam_unix.so).*?'
+    state: present
+    backrefs: yes
+  register: pam_cmd_result
+  check_mode: "{{ authselect_enabled }}"
+  failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
+
+
+# Not using pamd module because the file already has a line
+# that just need to be uncommented
+- name: Ensure access to the su command is restricted
+  block:
+    - name: "Ensure group {{ auth_su_group }} exists"
+      group:
+        name: "{{ auth_su_group }}"
+        state: present
+
+    - name: Ensure pam.d/su file has pam_wheel enabled
+      lineinfile:
+        path: /etc/pam.d/su
+        regexp: '^\s*#?\s*auth(\s+)required(\s+)pam_wheel.so\s*(use_uid)?\s*(group=.+?)?\s*$'
+        line: 'auth\1required\2pam_wheel.so use_uid group={{ auth_su_group }}'
+        backrefs: yes
+        state: present
+
+    - name: "Add root to {{ auth_su_group }} group"
+      user:
+        name: root
+        groups: "{{ auth_su_group }}"
+        append: yes
+  tags:
+    - su_restrict

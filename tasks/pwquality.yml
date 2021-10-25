@@ -1,0 +1,18 @@
+---
+# Run tasks to configure pwquality.conf file
+# and login.defs file.
+
+# Configure pwquality.conf settings
+# These settigs are used later on pam modules
+- name: Ensure password creation requirements are configured
+  lineinfile:
+    path: /etc/security/pwquality.conf
+    regexp: '^\s*{{ item.name }}\s*='
+    insertafter: '^\s*#\s*{{ item.name }}\s*='
+    line: "{{ item.name }} = {{ item.value }}"
+  loop:
+    - { name: 'minlen', value: "{{ auth_min_length | default(14, true) | int(14) }}" }
+    - { name: 'dcredit', value: "{{ auth_dcredit | default(-1, true) | int(-1)  }}" }
+    - { name: 'ucredit', value: "{{ auth_ucredit | default(-1, true) | int(-1) }}" }
+    - { name: 'ocredit', value: "{{ auth_ocredit | default(-1, true) | int(-1) }}" }
+    - { name: 'lcredit', value: "{{ auth_lcredit | default(-1, true) | int(-1) }}" }

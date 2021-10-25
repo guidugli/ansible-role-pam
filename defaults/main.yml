@@ -1,0 +1,46 @@
+---
+# defaults file for pam
+
+# If true, tasks will be executed to configure
+# authselect settings; if false, authselect
+# settings will not be changed.
+authselect_enabled: "{{ _authselect_enabled }}"
+
+# Name of the custom profile to be created
+authselect_profile_name: 'site-profile'
+
+# Base of the custom profile. Allowed values
+# are sssd, nis, minimal and winbind
+authselect_base_profile: sssd
+
+# If not defined, it will use 'with-faillock'
+# and 'without-nullok' as default
+authselect_options:
+  - with-faillock
+  - without-nullok
+
+auth_su_group: admin
+
+## Password settings ##
+
+# Number of passwords to 'remember' so user
+# cannot set new password as the old passwords
+auth_remember: 5
+
+# Number of login attempts before locking user
+auth_deny_after: 5
+
+# Time, in seconds, to wait before unlocking a locked user
+auth_unlock_time: 900
+
+# Tries before sending back a failure to pwquality
+auth_retry: 3
+
+# Password minimum length
+auth_min_length: 14
+
+# Password complexity rules
+auth_dcredit: -1  # Require at least 1 digit
+auth_ucredit: -1  # Require at least 1 uppercase
+auth_ocredit: -1  # Require at least 1 special char
+auth_lcredit: -1  # Require at least 1 lower case char

@@ -1,0 +1,52 @@
+---
+
+- name: Validate authselect_enabled value
+  assert:
+    that:
+      - authselect_enabled is defined
+      - authselect_enabled | type_debug == 'bool'
+    quiet: yes
+
+- name: Validate authselect_profile_name value
+  assert:
+    that:
+      - authselect_profile_name is defined
+      - authselect_profile_name is string
+      - authselect_profile_name | length > 0
+    quiet: yes
+  when: authselect_enabled
+
+- name: Validate authselect_base_profile value
+  assert:
+    that:
+      - authselect_base_profile is defined
+      - authselect_base_profile in ['sssd','minimal','nis','winbind']
+    quiet: yes
+  when: authselect_enabled
+
+- name: Validate authselect options
+  assert:
+    that:
+      - item is defined
+      - item in vars['_authselect_' + authselect_base_profile + '_options']
+    quiet: yes
+  loop: "{{ authselect_options | default([]) }}"
+
+- name: Validate numeric variables are correctly set
+  assert:
+    that:
+      - vars[item] is defined
+      - vars[item] | int(-100) > -100
+    quiet: yes
+  loop:
+    - auth_remember
+    - auth_deny_after
+    - auth_unlock_time
+    - auth_retry
+    - auth_min_length
+    - auth_dcredit
+    - auth_ucredit
+    - auth_ocredit
+    - auth_lcredit
+  loop_control:
+    label: "{{ item }}: {{ vars[item] | default('undefined') }}"

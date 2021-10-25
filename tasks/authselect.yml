@@ -1,0 +1,103 @@
+---
+
+- name: Ensure authselect is installed
+  package:
+    name: authselect
+    state: present
+    update_cache: yes
+
+- name: Create minimal base profile if required
+  block:
+    - name: If minimal base profile selected, check if it is available at target system
+      raw: "test -e /usr/share/authselect/default/minimal && echo -n true || echo -n false"
+      failed_when: false
+      changed_when: false
+      register: auth_mininal_cmd
+
+    - name: Create target directory
+      file:
+        path: /usr/share/authselect/default/minimal
+        state: directory
+        mode: '0755'
+      when: auth_mininal_cmd.stdout == 'false'
+
+    - name: Copy files to created directory
+      template:
+        src: "minimal/{{ item }}.j2"
+        dest: "/usr/share/authselect/default/minimal/{{ item }}"
+        force: no
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - README
+        - REQUIREMENTS
+        - nsswitch.conf
+        - password-auth
+        - postlogin
+        - system-auth
+      when: auth_mininal_cmd.stdout == 'false'
+
+  when: authselect_base_profile == 'minimal'
+
+# Create a custom authselect profile
+# If it already exists, the command will have
+# a return code of 4.
+- name: Create a custom authselect profile
+  command:
+    cmd: >
+      /usr/bin/authselect create-profile {{ authselect_profile_name }} -b {{ authselect_base_profile }} --symlink-meta
+  register: authselect_cmd_result
+  failed_when: authselect_cmd_result.rc != 0 and authselect_cmd_result.rc != 4
+  changed_when: authselect_cmd_result.rc == 0
+
+- name: Copy templates to custom profile
+  template:
+    src: "{{ authselect_base_profile }}/{{ item }}.j2"
+    dest: "/etc/authselect/custom/{{ authselect_profile_name }}/{{ item }}"
+    force: yes
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - system-auth
+    - password-auth
+
+- name: Check current authselect profile
+  shell: |
+    set -o pipefail
+    AS=`authselect current`
+    if [ $? -eq 2 ]; then
+      echo 'no-profile-set'
+    else
+      echo "$AS" | grep -i 'profile id:' | cut -d: -f2 | tr -d ' '
+    fi
+  args:
+    executable: /bin/bash
+  register: authselect_current_cmd
+  failed_when: authselect_current_cmd.rc != 0
+  changed_when: false
+
+- name: Store current profile name
+  set_fact:
+    authselect_current_profile: "{{ authselect_current_cmd.stdout }}"
+
+- name: Display current profile name
+  debug:
+    msg: "Current profile name: {{ authselect_current_profile }}"
+
+- name: Select created custom profile
+  command:
+    cmd: "authselect select -b --force custom/{{ authselect_profile_name }} {{ authselect_options |
+         default(['with-faillock','without-nullok']) | join(' ') }}"
+  register: authselect_cmd_result
+  failed_when: authselect_cmd_result.rc != 0
+  when: authselect_current_profile != 'custom/' + authselect_profile_name
+
+- name: Store new profile name
+  set_fact:
+    authselect_current_profile: "custom/{{ authselect_profile_name }}"
+
+- name: Display profile name after processing
+  debug:
+    msg: "Current profile name: {{ authselect_current_profile }}"

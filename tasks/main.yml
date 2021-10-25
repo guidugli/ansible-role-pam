@@ -1,0 +1,16 @@
+---
+# tasks file for pam
+
+# Check input variables
+- name: Check input variables (include asserts.yml)
+  include_tasks: asserts.yml
+
+- name: Configure authselect (include authselect.yml)
+  include_tasks: authselect.yml
+  when: authselect_enabled
+
+- name: Configure PAM settings
+  include_tasks: "{{ ansible_os_family }}_pam.yml"
+
+- name: Configure pwquality.conf
+  include_tasks: pwquality.yml

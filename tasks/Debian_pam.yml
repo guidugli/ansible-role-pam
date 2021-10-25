@@ -1,0 +1,109 @@
+---
+
+- name: Ensure libpam-pwquality is installed
+  apt:
+    name: libpam-pwquality
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Configure pam_tally2.so pam entry (common-auth)
+  pamd:
+    name: common-auth
+    type: auth
+    control: '[success=1 default=ignore]'
+    module_path: pam_unix.so
+    new_type: auth
+    new_control: required
+    new_module_path: pam_tally2.so
+    module_arguments: 'onerr=fail
+      audit
+      silent
+      deny={{ auth_deny_after | default(5,true) | int(5) }}
+      unlock_time={{ auth_unlock_time | default(900,true) | int(900) }}'
+    state: before
+
+- name: Configure pam_tally2.so pam entry (common-account)
+  pamd:
+    name: common-account
+    type: account
+    control: 'required'
+    module_path: pam_permit.so
+    new_type: account
+    new_control: required
+    new_module_path: pam_tally2.so
+    state: after
+
+- name: Configure pam_pwquality.so pam entry (common-password)
+  pamd:
+    name: common-password
+    type: password
+    control: '[success=1 default=ignore]'
+    module_path: pam_unix.so
+    new_type: password
+    new_control: requisite
+    new_module_path: pam_pwquality.so
+    module_arguments: 'retry={{ auth_retry | default(3,true) | int(3) }}'
+    state: before
+
+
+- name: Configure pam_pwhistory.so pam entry (common-password)
+  pamd:
+    name: common-password
+    type: password
+    control: 'requisite'
+    module_path: pam_pwquality.so
+    new_type: password
+    new_control: required
+    new_module_path: pam_pwhistory.so
+    module_arguments: 'remember={{ auth_remember | default(5,true) | int(5) }}'
+    state: before
+
+- name: Configure pam_umask.so pam entry (common-session)
+  pamd:
+    name: common-session
+    type: session
+    control: '[default=1]'
+    module_path: pam_permit.so
+    new_type: session
+    new_control: optional
+    new_module_path: pam_umask.so
+    module_arguments: ''
+    state: before
+
+
+- name: Configure common-password pam settings
+  pamd:
+    name: common-password
+    type: "{{ item.type }}"
+    control: "{{ item.control }}"
+    module_path: "{{ item.module }}"
+    module_arguments: "{{ item.arg }}"
+    state: args_present
+  loop:
+    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so, arg: "sha512" }
+
+
+# Not using pamd module because the file already has a line
+# that just need to be uncommented
+- name: Ensure access to the su command is restricted
+  block:
+    - name: "Ensure group {{ auth_su_group }} exists"
+      group:
+        name: "{{ auth_su_group }}"
+        state: present
+
+    - name: Ensure pam.d/su file has pam_wheel enabled to enforce
+      lineinfile:
+        path: /etc/pam.d/su
+        regexp: '^\s*#\s*auth\s+required\s+pam_wheel.so\s*(use_uid)?\s*(group=.+?)\s*$'
+        line: 'auth           required        pam_wheel.so use_uid group={{ auth_su_group }}'
+        state: present
+
+    - name: "Add root to {{ auth_su_group }} group"
+      user:
+        name: root
+        groups: "{{ auth_su_group }}"
+        append: yes
+  tags:
+    - su_restrict

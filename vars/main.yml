@@ -1,0 +1,99 @@
+---
+# vars file for pam
+
+_authselect_systems:
+  RedHat-8: true
+  CentOS-8: true
+  Fedora: true
+
+_authselect_enabled: "{{ _authselect_systems[ansible_distribution ~ '-' ~ ansible_distribution_major_version] |
+                     default(_authselect_systems[ansible_distribution]) | default(false) | bool }}"
+
+_install_packages:
+  Debian: ['libpam-pwquality']
+
+
+_authselect_sssd_options:
+  - with-custom-automount
+  - with-custom-group
+  - with-custom-netgroup
+  - with-custom-passwd
+  - with-custom-services
+  - with-ecryptfs
+  - with-faillock
+  - with-files-access-provider
+  - with-fingerprint
+  - with-mkhomedir
+  - with-pam-u2f
+  - with-pam-u2f-2fa
+  - with-pamaccess
+  - with-silent-lastlog
+  - with-smartcard
+  - with-smartcard-lock-on-removal
+  - with-smartcard-required
+  - with-sudo
+  - without-nullok
+  - without-pam-u2f-nouserok
+
+_authselect_minimal_options:
+  - with-altfiles
+  - with-custom-aliases
+  - with-custom-automount
+  - with-custom-ethers
+  - with-custom-group
+  - with-custom-hosts
+  - with-custom-initgroups
+  - with-custom-netgroup
+  - with-custom-networks
+  - with-custom-passwd
+  - with-custom-protocols
+  - with-custom-publickey
+  - with-custom-rpc
+  - with-custom-services
+  - with-custom-shadow
+  - with-ecryptfs
+  - with-faillock
+  - with-mkhomedir
+  - with-pamaccess
+  - with-silent-lastlog
+  - without-nullok
+
+_authselect_winbind_options:
+  - with-custom-group
+  - with-custom-passwd
+  - with-ecryptfs
+  - with-faillock
+  - with-fingerprint
+  - with-krb5
+  - with-mkhomedir
+  - with-pam-u2f
+  - with-pam-u2f-2fa
+  - with-pamaccess
+  - with-silent-lastlog
+  - without-nullok
+
+_authselect_nis_options:
+  - with-custom-aliases
+  - with-custom-automount
+  - with-custom-ethers
+  - with-custom-group
+  - with-custom-hosts
+  - with-custom-initgroups
+  - with-custom-netgroup
+  - with-custom-networks
+  - with-custom-passwd
+  - with-custom-protocols
+  - with-custom-publickey
+  - with-custom-rpc
+  - with-custom-services
+  - with-custom-shadow
+  - with-ecryptfs
+  - with-faillock
+  - with-fingerprint
+  - with-mkhomedir
+  - with-nispwquality
+  - with-pam-u2f
+  - with-pam-u2f-2fa
+  - with-pamaccess
+  - with-silent-lastlog
+  - without-nullok
