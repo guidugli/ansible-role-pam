@@ -2,5 +2,5 @@
 # handlers file for pam
 
 - name: authselect apply changes
-  command: "authselect apply-changes"
+  ansible.builtin.command: "authselect apply-changes"
   when: authselect_enabled

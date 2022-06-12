@@ -5,7 +5,7 @@
 # Configure pwquality.conf settings
 # These settigs are used later on pam modules
 - name: Ensure password creation requirements are configured
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/security/pwquality.conf
     regexp: '^\s*{{ item.name }}\s*='
     insertafter: '^\s*#\s*{{ item.name }}\s*='

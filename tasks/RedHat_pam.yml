@@ -7,7 +7,7 @@
 # environment and failing if any change is made.
 
 - name: Copy non authselect templates (if authselect is disabled)
-  template:
+  ansible.builtin.template:
     src: "redhat_noauth/{{ item }}.j2"
     dest: "/etc/pam.d/{{ item }}"
     force: yes
@@ -21,7 +21,7 @@
 
 
 - name: "Ensure PAM file system-auth is not missing key attributes"
-  pamd:
+  ansible.builtin.pamd:
     name: system-auth
     type: "{{ item.type }}"
     control: "{{ item.control }}"
@@ -40,7 +40,7 @@
 
 
 - name: "Ensure PAM file system-auth is not missing key faillock preauth attributes"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: '/etc/pam.d/system-auth'
     regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+preauth'
     line: 'auth\1required\2pam_faillock.so preauth silent deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
@@ -52,7 +52,7 @@
   failed_when: pam_cmd_result.failed or pam_cmd_result.changed
 
 - name: "Ensure PAM file system-auth is not missing key faillock authfail attributes"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: '/etc/pam.d/system-auth'
     regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+authfail'
     line: 'auth\1required\2pam_faillock.so authfail deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
@@ -64,7 +64,7 @@
   failed_when: pam_cmd_result.failed or pam_cmd_result.changed
 
 - name: "Ensure PAM file system-auth is not missing faillock account entry"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: '/etc/pam.d/system-auth'
     regexp: 'account(\s+)required(\s+)pam_faillock.so'
     line: 'account\1required\2pam_faillock.so'
@@ -77,7 +77,7 @@
 
 
 - name: "Ensure PAM file password-auth is not missing key attributes"
-  pamd:
+  ansible.builtin.pamd:
     name: password-auth
     type: "{{ item.type }}"
     control: "{{ item.control }}"
@@ -93,7 +93,7 @@
     - { type: password, control: sufficient, module: pam_unix.so, arg: "sha512" }
 
 - name: "Ensure PAM file password-auth is not missing key faillock preauth attributes"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: '/etc/pam.d/password-auth'
     regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+preauth.*'
     line: 'auth\1required\2pam_faillock.so preauth silent deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
@@ -105,7 +105,7 @@
   failed_when: pam_cmd_result.failed or pam_cmd_result.changed
 
 - name: "Ensure PAM file password-auth is not missing key faillock authfail attributes"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: '/etc/pam.d/password-auth'
     regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+authfail'
     line: 'auth\1required\2pam_faillock.so authfail deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
@@ -117,7 +117,7 @@
   failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
 
 - name: "Ensure PAM file password-auth is not missing faillock account entry"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: '/etc/pam.d/password-auth'
     regexp: 'account(\s+)required(\s+)pam_faillock.so'
     line: 'account\1required\2pam_faillock.so'
@@ -134,12 +134,12 @@
 - name: Ensure access to the su command is restricted
   block:
     - name: "Ensure group {{ auth_su_group }} exists"
-      group:
+      ansible.builtin.group:
         name: "{{ auth_su_group }}"
         state: present
 
     - name: Ensure pam.d/su file has pam_wheel enabled
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/pam.d/su
         regexp: '^\s*#?\s*auth(\s+)required(\s+)pam_wheel.so\s*(use_uid)?\s*(group=.+?)?\s*$'
         line: 'auth\1required\2pam_wheel.so use_uid group={{ auth_su_group }}'
@@ -147,7 +147,7 @@
         state: present
 
     - name: "Add root to {{ auth_su_group }} group"
-      user:
+      ansible.builtin.user:
         name: root
         groups: "{{ auth_su_group }}"
         append: yes

@@ -1,14 +1,14 @@
 ---
 
 - name: Validate authselect_enabled value
-  assert:
+  ansible.builtin.assert:
     that:
       - authselect_enabled is defined
       - authselect_enabled | type_debug == 'bool'
     quiet: yes
 
 - name: Validate authselect_profile_name value
-  assert:
+  ansible.builtin.assert:
     that:
       - authselect_profile_name is defined
       - authselect_profile_name is string
@@ -17,7 +17,7 @@
   when: authselect_enabled
 
 - name: Validate authselect_base_profile value
-  assert:
+  ansible.builtin.assert:
     that:
       - authselect_base_profile is defined
       - authselect_base_profile in ['sssd','minimal','nis','winbind']
@@ -25,7 +25,7 @@
   when: authselect_enabled
 
 - name: Validate authselect options
-  assert:
+  ansible.builtin.assert:
     that:
       - item is defined
       - item in vars['_authselect_' + authselect_base_profile + '_options']
@@ -33,7 +33,7 @@
   loop: "{{ authselect_options | default([]) }}"
 
 - name: Validate numeric variables are correctly set
-  assert:
+  ansible.builtin.assert:
     that:
       - vars[item] is defined
       - vars[item] | int(-100) > -100

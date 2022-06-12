@@ -1,14 +1,14 @@
 ---
 
 - name: Ensure libpam-pwquality is installed
-  apt:
+  ansible.builtin.apt:
     name: libpam-pwquality
     state: present
     update_cache: yes
     cache_valid_time: 3600
 
 - name: Configure pam_tally2.so pam entry (common-auth)
-  pamd:
+  ansible.builtin.pamd:
     name: common-auth
     type: auth
     control: '[success=1 default=ignore]'
@@ -24,7 +24,7 @@
     state: before
 
 - name: Configure pam_tally2.so pam entry (common-account)
-  pamd:
+  ansible.builtin.pamd:
     name: common-account
     type: account
     control: 'required'
@@ -35,7 +35,7 @@
     state: after
 
 - name: Configure pam_pwquality.so pam entry (common-password)
-  pamd:
+  ansible.builtin.pamd:
     name: common-password
     type: password
     control: '[success=1 default=ignore]'
@@ -48,7 +48,7 @@
 
 
 - name: Configure pam_pwhistory.so pam entry (common-password)
-  pamd:
+  ansible.builtin.pamd:
     name: common-password
     type: password
     control: 'requisite'
@@ -60,7 +60,7 @@
     state: before
 
 - name: Configure pam_umask.so pam entry (common-session)
-  pamd:
+  ansible.builtin.pamd:
     name: common-session
     type: session
     control: '[default=1]'
@@ -73,7 +73,7 @@
 
 
 - name: Configure common-password pam settings
-  pamd:
+  ansible.builtin.pamd:
     name: common-password
     type: "{{ item.type }}"
     control: "{{ item.control }}"
@@ -89,19 +89,19 @@
 - name: Ensure access to the su command is restricted
   block:
     - name: "Ensure group {{ auth_su_group }} exists"
-      group:
+      ansible.builtin.group:
         name: "{{ auth_su_group }}"
         state: present
 
     - name: Ensure pam.d/su file has pam_wheel enabled to enforce
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/pam.d/su
         regexp: '^\s*#\s*auth\s+required\s+pam_wheel.so\s*(use_uid)?\s*(group=.+?)\s*$'
         line: 'auth           required        pam_wheel.so use_uid group={{ auth_su_group }}'
         state: present
 
     - name: "Add root to {{ auth_su_group }} group"
-      user:
+      ansible.builtin.user:
         name: root
         groups: "{{ auth_su_group }}"
         append: yes
