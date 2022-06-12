@@ -129,6 +129,12 @@
   failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
 
 
+# Check if su is installed
+- name: Check if /bin/su is installed
+  ansible.builtin.stat:
+    path: /bin/su
+  register: pam_cmd_result
+
 # Not using pamd module because the file already has a line
 # that just need to be uncommented
 - name: Ensure access to the su command is restricted
@@ -137,6 +143,7 @@
       ansible.builtin.group:
         name: "{{ auth_su_group }}"
         state: present
+      when: pam_cmd_result.stat.exists
 
     - name: Ensure pam.d/su file has pam_wheel enabled
       ansible.builtin.lineinfile:
@@ -145,11 +152,13 @@
         line: 'auth\1required\2pam_wheel.so use_uid group={{ auth_su_group }}'
         backrefs: yes
         state: present
+      when: pam_cmd_result.stat.exists
 
     - name: "Add root to {{ auth_su_group }} group"
       ansible.builtin.user:
         name: root
         groups: "{{ auth_su_group }}"
         append: yes
+      when: pam_cmd_result.stat.exists
   tags:
     - su_restrict
