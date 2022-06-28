@@ -24,6 +24,7 @@ _authselect_sssd_options:
   - with-files-access-provider
   - with-fingerprint
   - with-mkhomedir
+  - with-pam-gnome-keyring
   - with-pam-u2f
   - with-pam-u2f-2fa
   - with-pamaccess
@@ -66,11 +67,13 @@ _authselect_winbind_options:
   - with-fingerprint
   - with-krb5
   - with-mkhomedir
+  - with-pam-gnome-keyring
   - with-pam-u2f
   - with-pam-u2f-2fa
   - with-pamaccess
   - with-silent-lastlog
   - without-nullok
+  - without-pam-u2f-nouserok
 
 _authselect_nis_options:
   - with-custom-aliases
@@ -87,9 +90,12 @@ _authselect_nis_options:
   - with-custom-rpc
   - with-custom-services
   - with-custom-shadow
+  - with-altfiles
   - with-ecryptfs
   - with-faillock
   - with-fingerprint
+  - with-mdns4
+  - with-mdns6
   - with-mkhomedir
   - with-nispwquality
   - with-pam-u2f
@@ -97,3 +103,4 @@ _authselect_nis_options:
   - with-pamaccess
   - with-silent-lastlog
   - without-nullok
+  - without-pam-u2f-nouserok
