@@ -19,6 +19,24 @@
     - password-auth
   when: not authselect_enabled
 
+- name: "Ensure pam_unix.so do not specify encrypt method (system-auth)"
+  ansible.builtin.pamd:
+    name: system-auth
+    type: password
+    control: sufficient
+    module_path: pam_unix.so
+    module_arguments: "{{ item }}"
+    state: args_absent
+  register: pam_cmd_result
+  check_mode: "{{ authselect_enabled }}"
+  failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
+  loop:
+    - yescrypt
+    - md5
+    - bigcrypt
+    - sha256
+    - sha512
+    - blowfish
 
 - name: "Ensure PAM file system-auth is not missing key attributes"
   ansible.builtin.pamd:
@@ -35,7 +53,6 @@
     - { type: password, control: requisite, module: pam_pwquality.so, arg: "enforce_for_root" }
     - { type: password, control: requisite, module: pam_pwquality.so, arg: "retry={{ auth_retry }}" }
     - { type: password, control: requisite, module: pam_pwquality.so, arg: "remember={{ auth_remember }}" }
-    - { type: password, control: sufficient, module: pam_unix.so, arg: "sha512" }
     - { type: password, control: sufficient, module: pam_unix.so, arg: "remember={{ auth_remember }}" }
 
 
@@ -43,7 +60,7 @@
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/system-auth'
     regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+preauth'
-    line: 'auth\1required\2pam_faillock.so preauth silent deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
+    line: 'auth\1required\2pam_faillock.so preauth silent'
     #insertafter: 'auth.*?(pam_faildelay.so|pam_env.so).*?'
     state: present
     backrefs: yes
@@ -55,7 +72,7 @@
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/system-auth'
     regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+authfail'
-    line: 'auth\1required\2pam_faillock.so authfail deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
+    line: 'auth\1required\2pam_faillock.so authfail'
     #insertbefore: 'auth.*?(pam_deny.so).*?'
     state: present
     backrefs: yes
@@ -75,6 +92,24 @@
   check_mode: "{{ authselect_enabled }}"
   failed_when: pam_cmd_result.failed or pam_cmd_result.changed
 
+- name: "Ensure pam_unix.so do not specify encrypt method"
+  ansible.builtin.pamd:
+    name: password-auth
+    type: password
+    control: sufficient
+    module_path: pam_unix.so
+    module_arguments: "{{ item }}"
+    state: args_absent
+  register: pam_cmd_result
+  check_mode: "{{ authselect_enabled }}"
+  failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
+  loop:
+    - yescrypt
+    - md5
+    - bigcrypt
+    - sha256
+    - sha512
+    - blowfish
 
 - name: "Ensure PAM file password-auth is not missing key attributes"
   ansible.builtin.pamd:
@@ -90,13 +125,12 @@
   loop:
     - { type: password, control: requisite, module: pam_pwquality.so, arg: "enforce_for_root" }
     - { type: password, control: requisite, module: pam_pwquality.so, arg: "retry={{ auth_retry }}" }
-    - { type: password, control: sufficient, module: pam_unix.so, arg: "sha512" }
 
 - name: "Ensure PAM file password-auth is not missing key faillock preauth attributes"
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/password-auth'
     regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+preauth.*'
-    line: 'auth\1required\2pam_faillock.so preauth silent deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
+    line: 'auth\1required\2pam_faillock.so preauth silent'
     #insertafter: 'auth.*?(pam_faildelay.so|pam_env.so).*?'
     state: present
     backrefs: yes
@@ -108,7 +142,7 @@
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/password-auth'
     regexp: 'auth(\s+)required(\s+)pam_faillock.so\s+authfail'
-    line: 'auth\1required\2pam_faillock.so authfail deny={{ auth_deny_after }} unlock_time={{ auth_unlock_time }}'
+    line: 'auth\1required\2pam_faillock.so authfail'
     #insertbefore: 'auth.*?(pam_deny.so).*?'
     state: present
     backrefs: yes

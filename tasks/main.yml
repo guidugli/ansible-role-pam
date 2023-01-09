@@ -14,3 +14,6 @@
 
 - name: Configure pwquality.conf
   ansible.builtin.include_tasks: pwquality.yml
+
+- name: Configure faillock.conf
+  ansible.builtin.include_tasks: faillock.yml

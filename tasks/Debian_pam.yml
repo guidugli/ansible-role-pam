@@ -7,7 +7,7 @@
     update_cache: yes
     cache_valid_time: 3600
 
-- name: Configure pam_tally2.so pam entry (common-auth)
+- name: Configure pam_faillock.so pam entry 1 (common-auth)
   ansible.builtin.pamd:
     name: common-auth
     type: auth
@@ -15,15 +15,36 @@
     module_path: pam_unix.so
     new_type: auth
     new_control: required
-    new_module_path: pam_tally2.so
-    module_arguments: 'onerr=fail
-      audit
-      silent
-      deny={{ auth_deny_after | default(5,true) | int(5) }}
-      unlock_time={{ auth_unlock_time | default(900,true) | int(900) }}'
+    new_module_path: pam_faillock.so
+    module_arguments: 'preauth # Added to enable faillock'
     state: before
 
-- name: Configure pam_tally2.so pam entry (common-account)
+- name: Configure pam_faillock.so pam entry 2 (common-auth)
+  ansible.builtin.pamd:
+    name: common-auth
+    type: auth
+    control: '[success=1 default=ignore]'
+    module_path: pam_unix.so
+    new_type: auth
+    new_control: '[default=die]'
+    new_module_path: pam_faillock.so
+    module_arguments: 'authfail # Added to enable faillock'
+    state: after
+
+- name: Configure pam_faillock.so pam entry 3 (common-auth)
+  ansible.builtin.pamd:
+    name: common-auth
+    type: auth
+    control: '[default=die]'
+    module_path: pam_faillock.so
+    new_type: auth
+    new_control: sufficient
+    new_module_path: pam_faillock.so
+    module_arguments: 'authsucc # Added to enable faillock'
+    state: after
+
+
+- name: Configure pam_faillock.so pam entry (common-account)
   ansible.builtin.pamd:
     name: common-account
     type: account
@@ -31,7 +52,8 @@
     module_path: pam_permit.so
     new_type: account
     new_control: required
-    new_module_path: pam_tally2.so
+    new_module_path: pam_faillock.so
+    module_arguments: '# Added to enable faillock'
     state: after
 
 - name: Configure pam_pwquality.so pam entry (common-password)
@@ -68,20 +90,31 @@
     new_type: session
     new_control: optional
     new_module_path: pam_umask.so
-    module_arguments: ''
+    module_arguments: '# set umask according to login.defs'
     state: before
 
 
-- name: Configure common-password pam settings
+- name: Remove encryption method from pam_unix.so on common-password
   ansible.builtin.pamd:
     name: common-password
     type: "{{ item.type }}"
     control: "{{ item.control }}"
     module_path: "{{ item.module }}"
     module_arguments: "{{ item.arg }}"
-    state: args_present
+    state: args_absent
   loop:
-    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so, arg: "sha512" }
+    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
+        arg: "yescrypt" }
+    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
+        arg: "md5" }
+    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
+        arg: "bigcrypt" }
+    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
+        arg: "sha256" }
+    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
+        arg: "sha512" }
+    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
+        arg: "blowfish" }
 
 
 # Not using pamd module because the file already has a line
@@ -99,6 +132,7 @@
         regexp: '^\s*#\s*auth\s+required\s+pam_wheel.so\s*(use_uid)?\s*(group=.+?)\s*$'
         line: 'auth           required        pam_wheel.so use_uid group={{ auth_su_group }}'
         state: present
+        insertafter: '^\s*#\s*auth\s+required\s+pam_wheel.so'
 
     - name: "Add root to {{ auth_su_group }} group"
       ansible.builtin.user:

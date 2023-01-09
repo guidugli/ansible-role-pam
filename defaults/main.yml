@@ -30,8 +30,13 @@ auth_remember: 5
 # Number of login attempts before locking user
 auth_deny_after: 5
 
+# The length of the interval during which the consecutive
+# authentication failures must happen for the user account
+# lock out is <replaceable>n</replaceable> seconds.
+auth_fail_interval: 900
+
 # Time, in seconds, to wait before unlocking a locked user
-auth_unlock_time: 900
+auth_unlock_time: 600
 
 # Tries before sending back a failure to pwquality
 auth_retry: 3

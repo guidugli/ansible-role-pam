@@ -1,6 +1,5 @@
 ---
 # Run tasks to configure pwquality.conf file
-# and login.defs file.
 
 # Configure pwquality.conf settings
 # These settigs are used later on pam modules
