@@ -7,6 +7,7 @@
     update_cache: yes
 
 - name: Create minimal base profile if required
+  when: authselect_base_profile == 'minimal'
   block:
     - name: If minimal base profile selected, check if it is available at target system
       ansible.builtin.raw: "test -e /usr/share/authselect/default/minimal && echo -n true || echo -n false"
@@ -37,8 +38,6 @@
         - postlogin
         - system-auth
       when: auth_mininal_cmd.stdout == 'false'
-
-  when: authselect_base_profile == 'minimal'
 
 # Create a custom authselect profile
 # If it already exists, the command will have
@@ -89,7 +88,7 @@
 - name: Select created custom profile
   ansible.builtin.command:
     cmd: "authselect select -b --force custom/{{ authselect_profile_name }} {{ authselect_options |
-         default(['with-faillock','without-nullok']) | join(' ') }}"
+         default(['with-faillock', 'without-nullok']) | join(' ') }}"
   register: authselect_cmd_result
   failed_when: authselect_cmd_result.rc != 0
   when: authselect_current_profile != 'custom/' + authselect_profile_name

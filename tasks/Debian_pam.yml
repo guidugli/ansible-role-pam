@@ -65,7 +65,7 @@
     new_type: password
     new_control: requisite
     new_module_path: pam_pwquality.so
-    module_arguments: 'retry={{ auth_retry | default(3,true) | int(3) }}'
+    module_arguments: 'retry={{ auth_retry | default(3, true) | int(3) }}'
     state: before
 
 
@@ -78,7 +78,7 @@
     new_type: password
     new_control: required
     new_module_path: pam_pwhistory.so
-    module_arguments: 'remember={{ auth_remember | default(5,true) | int(5) }}'
+    module_arguments: 'remember={{ auth_remember | default(5, true) | int(5) }}'
     state: before
 
 - name: Configure pam_umask.so pam entry (common-session)
@@ -97,31 +97,26 @@
 - name: Remove encryption method from pam_unix.so on common-password
   community.general.pamd:
     name: common-password
-    type: "{{ item.type }}"
-    control: "{{ item.control }}"
-    module_path: "{{ item.module }}"
-    module_arguments: "{{ item.arg }}"
+    type: password
+    control: '[success=1 default=ignore]'
+    module_path: pam_unix.so
+    module_arguments: "{{ item }}"
     state: args_absent
   loop:
-    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
-        arg: "yescrypt" }
-    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
-        arg: "md5" }
-    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
-        arg: "bigcrypt" }
-    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
-        arg: "sha256" }
-    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
-        arg: "sha512" }
-    - { type: password, control: '[success=1 default=ignore]', module: pam_unix.so,
-        arg: "blowfish" }
-
+    - yescrypt
+    - md5
+    - bigcrypt
+    - sha256
+    - sha512
+    - blowfish
 
 # Not using pamd module because the file already has a line
 # that just need to be uncommented
 - name: Ensure access to the su command is restricted
+  tags:
+    - su_restrict
   block:
-    - name: "Ensure group {{ auth_su_group }} exists"
+    - name: "Ensure group exists: {{ auth_su_group }}"
       ansible.builtin.group:
         name: "{{ auth_su_group }}"
         state: present
@@ -134,10 +129,8 @@
         state: present
         insertafter: '^\s*#\s*auth\s+required\s+pam_wheel.so'
 
-    - name: "Add root to {{ auth_su_group }} group"
+    - name: "Add root to group: {{ auth_su_group }}"
       ansible.builtin.user:
         name: root
         groups: "{{ auth_su_group }}"
         append: yes
-  tags:
-    - su_restrict

@@ -41,7 +41,7 @@
 - name: "Ensure PAM file system-auth is not missing key attributes"
   community.general.pamd:
     name: system-auth
-    type: "{{ item.type }}"
+    type: password
     control: "{{ item.control }}"
     module_path: "{{ item.module }}"
     module_arguments: "{{ item.arg }}"
@@ -50,10 +50,10 @@
   check_mode: "{{ authselect_enabled }}"
   failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
   loop:
-    - { type: password, control: requisite, module: pam_pwquality.so, arg: "enforce_for_root" }
-    - { type: password, control: requisite, module: pam_pwquality.so, arg: "retry={{ auth_retry }}" }
-    - { type: password, control: requisite, module: pam_pwquality.so, arg: "remember={{ auth_remember }}" }
-    - { type: password, control: sufficient, module: pam_unix.so, arg: "remember={{ auth_remember }}" }
+    - { control: requisite, module: pam_pwquality.so, arg: "enforce_for_root" }
+    - { control: requisite, module: pam_pwquality.so, arg: "retry={{ auth_retry }}" }
+    - { control: requisite, module: pam_pwquality.so, arg: "remember={{ auth_remember }}" }
+    - { control: sufficient, module: pam_unix.so, arg: "remember={{ auth_remember }}" }
 
 
 - name: "Ensure PAM file system-auth is not missing key faillock preauth attributes"
@@ -114,17 +114,17 @@
 - name: "Ensure PAM file password-auth is not missing key attributes"
   community.general.pamd:
     name: password-auth
-    type: "{{ item.type }}"
-    control: "{{ item.control }}"
-    module_path: "{{ item.module }}"
-    module_arguments: "{{ item.arg }}"
+    type: password
+    control: requisite
+    module_path: pam_pwquality.so
+    module_arguments: "{{ item }}"
     state: args_present
   register: pam_cmd_result
   check_mode: "{{ authselect_enabled }}"
   failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
   loop:
-    - { type: password, control: requisite, module: pam_pwquality.so, arg: "enforce_for_root" }
-    - { type: password, control: requisite, module: pam_pwquality.so, arg: "retry={{ auth_retry }}" }
+    - "enforce_for_root"
+    - "retry={{ auth_retry }}"
 
 - name: "Ensure PAM file password-auth is not missing key faillock preauth attributes"
   ansible.builtin.lineinfile:
@@ -172,8 +172,10 @@
 # Not using pamd module because the file already has a line
 # that just need to be uncommented
 - name: Ensure access to the su command is restricted
+  tags:
+    - su_restrict
   block:
-    - name: "Ensure group {{ auth_su_group }} exists"
+    - name: "Ensure group exists: {{ auth_su_group }}"
       ansible.builtin.group:
         name: "{{ auth_su_group }}"
         state: present
@@ -188,11 +190,9 @@
         state: present
       when: pam_cmd_result.stat.exists
 
-    - name: "Add root to {{ auth_su_group }} group"
+    - name: "Add root to group: {{ auth_su_group }}"
       ansible.builtin.user:
         name: root
         groups: "{{ auth_su_group }}"
         append: yes
       when: pam_cmd_result.stat.exists
-  tags:
-    - su_restrict
