@@ -74,5 +74,6 @@ jobs:
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
+          ANSIBLE_REMOTE_TMP: '/tmp/ansible'
           MDRIVER: 'docker'
           MOLECULE_DISTRO: ${{ matrix.distro }}
