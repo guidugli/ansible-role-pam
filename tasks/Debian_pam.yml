@@ -8,7 +8,7 @@
     cache_valid_time: 3600
 
 - name: Configure pam_faillock.so pam entry 1 (common-auth)
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: common-auth
     type: auth
     control: '[success=1 default=ignore]'
@@ -20,7 +20,7 @@
     state: before
 
 - name: Configure pam_faillock.so pam entry 2 (common-auth)
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: common-auth
     type: auth
     control: '[success=1 default=ignore]'
@@ -32,7 +32,7 @@
     state: after
 
 - name: Configure pam_faillock.so pam entry 3 (common-auth)
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: common-auth
     type: auth
     control: '[default=die]'
@@ -45,7 +45,7 @@
 
 
 - name: Configure pam_faillock.so pam entry (common-account)
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: common-account
     type: account
     control: 'required'
@@ -57,7 +57,7 @@
     state: after
 
 - name: Configure pam_pwquality.so pam entry (common-password)
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: common-password
     type: password
     control: '[success=1 default=ignore]'
@@ -70,7 +70,7 @@
 
 
 - name: Configure pam_pwhistory.so pam entry (common-password)
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: common-password
     type: password
     control: 'requisite'
@@ -82,7 +82,7 @@
     state: before
 
 - name: Configure pam_umask.so pam entry (common-session)
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: common-session
     type: session
     control: '[default=1]'
@@ -95,7 +95,7 @@
 
 
 - name: Remove encryption method from pam_unix.so on common-password
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: common-password
     type: "{{ item.type }}"
     control: "{{ item.control }}"

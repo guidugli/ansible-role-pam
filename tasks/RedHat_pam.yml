@@ -20,7 +20,7 @@
   when: not authselect_enabled
 
 - name: "Ensure pam_unix.so do not specify encrypt method (system-auth)"
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: system-auth
     type: password
     control: sufficient
@@ -39,7 +39,7 @@
     - blowfish
 
 - name: "Ensure PAM file system-auth is not missing key attributes"
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: system-auth
     type: "{{ item.type }}"
     control: "{{ item.control }}"
@@ -93,7 +93,7 @@
   failed_when: pam_cmd_result.failed or pam_cmd_result.changed
 
 - name: "Ensure pam_unix.so do not specify encrypt method"
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: password-auth
     type: password
     control: sufficient
@@ -112,7 +112,7 @@
     - blowfish
 
 - name: "Ensure PAM file password-auth is not missing key attributes"
-  ansible.builtin.pamd:
+  community.general.pamd:
     name: password-auth
     type: "{{ item.type }}"
     control: "{{ item.control }}"
