@@ -23,7 +23,7 @@
   when: ansible_distribution_major_version|int <= 10
   block:
     - name: Configure pam_tally2.so pam entry (common-auth)
-      ansible.builtin.pamd:
+      community.general.pamd:
         name: common-auth
         type: auth
         control: '[success=1 default=ignore]'
@@ -34,12 +34,12 @@
         module_arguments: 'onerr=fail
           audit
           silent
-          deny={{ auth_deny_after | default(5,true) | int(5) }}
-          unlock_time={{ auth_unlock_time | default(900,true) | int(900) }}'
+          deny={{ auth_deny_after | default(5, true) | int(5) }}
+          unlock_time={{ auth_unlock_time | default(900, true) | int(900) }}'
         state: before
 
     - name: Configure pam_tally2.so pam entry (common-account)
-      ansible.builtin.pamd:
+      community.general.pamd:
         name: common-account
         type: account
         control: 'required'
