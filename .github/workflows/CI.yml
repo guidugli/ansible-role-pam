@@ -54,6 +54,7 @@ jobs:
           - fedora34
           - fedora35
           - fedora36
+          - fedora37
 
     steps:
       - name: Check out the codebase.
