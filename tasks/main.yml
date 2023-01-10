@@ -17,3 +17,4 @@
 
 - name: Configure faillock.conf
   ansible.builtin.include_tasks: faillock.yml
+  when: ansible_distribution_major_version|int > 10

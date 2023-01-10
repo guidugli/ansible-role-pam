@@ -7,55 +7,6 @@
     update_cache: yes
     cache_valid_time: 3600
 
-- name: Configure pam_faillock.so pam entry 1 (common-auth)
-  community.general.pamd:
-    name: common-auth
-    type: auth
-    control: '[success=1 default=ignore]'
-    module_path: pam_unix.so
-    new_type: auth
-    new_control: required
-    new_module_path: pam_faillock.so
-    module_arguments: 'preauth # Added to enable faillock'
-    state: before
-
-- name: Configure pam_faillock.so pam entry 2 (common-auth)
-  community.general.pamd:
-    name: common-auth
-    type: auth
-    control: '[success=1 default=ignore]'
-    module_path: pam_unix.so
-    new_type: auth
-    new_control: '[default=die]'
-    new_module_path: pam_faillock.so
-    module_arguments: 'authfail # Added to enable faillock'
-    state: after
-
-- name: Configure pam_faillock.so pam entry 3 (common-auth)
-  community.general.pamd:
-    name: common-auth
-    type: auth
-    control: '[default=die]'
-    module_path: pam_faillock.so
-    new_type: auth
-    new_control: sufficient
-    new_module_path: pam_faillock.so
-    module_arguments: 'authsucc # Added to enable faillock'
-    state: after
-
-
-- name: Configure pam_faillock.so pam entry (common-account)
-  community.general.pamd:
-    name: common-account
-    type: account
-    control: 'required'
-    module_path: pam_permit.so
-    new_type: account
-    new_control: required
-    new_module_path: pam_faillock.so
-    module_arguments: '# Added to enable faillock'
-    state: after
-
 - name: Configure pam_pwquality.so pam entry (common-password)
   community.general.pamd:
     name: common-password
@@ -68,6 +19,87 @@
     module_arguments: 'retry={{ auth_retry | default(3, true) | int(3) }}'
     state: before
 
+- name: Configure pam_tally2.so for Debian 10 or lower
+  when: ansible_distribution_major_version|int <= 10
+  block:
+    - name: Configure pam_tally2.so pam entry (common-auth)
+      ansible.builtin.pamd:
+        name: common-auth
+        type: auth
+        control: '[success=1 default=ignore]'
+        module_path: pam_unix.so
+        new_type: auth
+        new_control: required
+        new_module_path: pam_tally2.so
+        module_arguments: 'onerr=fail
+          audit
+          silent
+          deny={{ auth_deny_after | default(5,true) | int(5) }}
+          unlock_time={{ auth_unlock_time | default(900,true) | int(900) }}'
+        state: before
+
+    - name: Configure pam_tally2.so pam entry (common-account)
+      ansible.builtin.pamd:
+        name: common-account
+        type: account
+        control: 'required'
+        module_path: pam_permit.so
+        new_type: account
+        new_control: required
+        new_module_path: pam_tally2.so
+        state: after
+
+
+- name: Configure pam_faillock.so for Debian 11 or greater
+  when: ansible_distribution_major_version|int >= 11
+  block:
+    - name: Configure pam_faillock.so pam entry 1 (common-auth)
+      community.general.pamd:
+        name: common-auth
+        type: auth
+        control: '[success=1 default=ignore]'
+        module_path: pam_unix.so
+        new_type: auth
+        new_control: required
+        new_module_path: pam_faillock.so
+        module_arguments: 'preauth # Added to enable faillock'
+        state: before
+
+    - name: Configure pam_faillock.so pam entry 2 (common-auth)
+      community.general.pamd:
+        name: common-auth
+        type: auth
+        control: '[success=1 default=ignore]'
+        module_path: pam_unix.so
+        new_type: auth
+        new_control: '[default=die]'
+        new_module_path: pam_faillock.so
+        module_arguments: 'authfail # Added to enable faillock'
+        state: after
+
+    - name: Configure pam_faillock.so pam entry 3 (common-auth)
+      community.general.pamd:
+        name: common-auth
+        type: auth
+        control: '[default=die]'
+        module_path: pam_faillock.so
+        new_type: auth
+        new_control: sufficient
+        new_module_path: pam_faillock.so
+        module_arguments: 'authsucc # Added to enable faillock'
+        state: after
+
+    - name: Configure pam_faillock.so pam entry (common-account)
+      community.general.pamd:
+        name: common-account
+        type: account
+        control: 'required'
+        module_path: pam_permit.so
+        new_type: account
+        new_control: required
+        new_module_path: pam_faillock.so
+        module_arguments: '# Added to enable faillock'
+        state: after
 
 - name: Configure pam_pwhistory.so pam entry (common-password)
   community.general.pamd:
