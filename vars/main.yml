@@ -2,7 +2,9 @@
 # vars file for pam
 
 _authselect_systems:
+  RedHat-9: true
   RedHat-8: true
+  CentOS-9: true
   CentOS-8: true
   Fedora: true
 
