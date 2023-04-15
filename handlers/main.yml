@@ -3,4 +3,5 @@
 
 - name: Authselect apply changes
   ansible.builtin.command: "authselect apply-changes"
+  changed_when: true
   when: authselect_enabled
