@@ -1,0 +1,12 @@
+---
+# Run tasks to configure pwhistory.conf file
+
+# These settigs are used later on pam modules
+- name: Update /etc/security/pwhistory.conf
+  ansible.builtin.template:
+    src: pwhistory.conf.j2
+    dest: /etc/security/pwhistory.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes

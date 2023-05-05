@@ -1,7 +1,7 @@
 auth        required                                     pam_env.so
 auth        required                                     pam_faildelay.so delay=2000000
 auth        required                                     pam_faillock.so preauth silent                        {include if "with-faillock"}
-auth        sufficient                                   pam_unix.so {if not "without-nullok":nullok} try_first_pass
+auth        sufficient                                   pam_unix.so {if not "without-nullok":nullok}
 auth        required                                     pam_faillock.so authfail                              {include if "with-faillock"}
 auth        required                                     pam_deny.so
 
@@ -9,8 +9,10 @@ account     required                                     pam_access.so          
 account     required                                     pam_faillock.so                                        {include if "with-faillock"}
 account     required                                     pam_unix.so
 
-password    requisite                                    pam_pwquality.so try_first_pass enforce_for_root retry={{ auth_retry }} remember={{ auth_remember }}
-password    sufficient                                   pam_unix.so shadow {if not "without-nullok":nullok} try_first_pass use_authtok remember={{ auth_remember }}
+password    requisite                                    pam_pwquality.so
+password    [default=1 ignore=ignore success=ok]         pam_localuser.so                                       {include if "with-pwhistory"}
+password    requisite                                    pam_pwhistory.so use_authtok                           {include if "with-pwhistory"}
+password    sufficient                                   pam_unix.so shadow {if not "without-nullok":nullok} use_authtok remember={{ auth_remember }}
 password    required                                     pam_deny.so
 
 session     optional                                     pam_keyinit.so revoke

@@ -27,6 +27,21 @@ auth_su_group: admin
 # cannot set new password as the old passwords
 auth_remember: 5
 
+# The directory where the user files with the failure records are kept.
+# The default is /var/run/faillock.
+#auth_faillock_dir: /var/run/faillock
+
+# Will log the user name into the system log if the user is not found
+# (if option is true)
+auth_audit: false
+
+# Don't print informative messages (if set to true).
+auth_silent: false
+
+# Don't log informative messages via syslog (if set to true).
+auth_no_log_info: false
+
+
 # Number of login attempts before locking user
 auth_deny_after: 5
 
@@ -38,8 +53,34 @@ auth_fail_interval: 900
 # Time, in seconds, to wait before unlocking a locked user
 auth_unlock_time: 600
 
+# Root account can become locked as well as regular accounts.
+# Enabled if option is present.
+auth_even_deny_root: false
+
+# This option implies the `even_deny_root` option.
+# Allow access after n seconds to root account after the
+# account is locked. In case the option is not specified
+# the value is the same as of the `unlock_time` option.
+#auth_root_unlock_time: 900
+
+# If a group name is specified with this option, members
+# of the group will be handled by this module the same as
+# the root account (the options `even_deny_root>` and
+# `root_unlock_time` will apply to them.
+# By default, the option is not set.
+#auth_admin_group: <admin_group_name>
+
+
 # Tries before sending back a failure to pwquality
 auth_retry: 3
+
+# The directory where the last passwords are kept.
+# The default is /etc/security/opasswd.
+#auth_remember_file: /etc/security/opasswd
+
+# Number of characters in the new password that must not be
+# present in the old password.
+#auth_difok: 1
 
 # Password minimum length
 auth_min_length: 14
@@ -49,3 +90,45 @@ auth_dcredit: -1  # Require at least 1 digit
 auth_ucredit: -1  # Require at least 1 uppercase
 auth_ocredit: -1  # Require at least 1 special char
 auth_lcredit: -1  # Require at least 1 lower case char
+
+# The maximum number of allowed consecutive same characters
+# in the new password. The check is disabled if the value is 0.
+#auth_maxrepeat: 0
+
+# The maximum number of allowed consecutive characters of the
+# same class in the new password.
+# The check is disabled if the value is 0.
+#auth_maxclassrepeat: 0
+
+# Whether to check for the words from the passwd entry GECOS
+# string of the user. The check is enabled if the value is not 0.
+#auth_gecoscheck: 0
+
+# Whether to check for the words from the cracklib dictionary.
+# The check is enabled if the value is not 0.
+#auth_dictcheck: 1
+
+# Whether to check if it contains the user name in some form.
+# The check is enabled if the value is not 0.
+#auth_usercheck: 1
+
+# Length of substrings from the username to check for in the password
+# The check is enabled if the value is greater than 0 and usercheck is enabled.
+#auth_usersubstr: 0
+
+# Whether the check is enforced by the PAM module and possibly other
+# applications.
+# The new password is rejected if it fails the check and the value is not 0.
+#auth_enforcing: 1
+
+# Path to the cracklib dictionaries. Default is to use the cracklib default.
+#auth_dictpath: /some/path
+
+# Enforces pwquality checks on the root user password.
+# Enabled if the option is present.
+auth_enforce_for_root: true
+
+# Skip testing the password quality for users that are not present in the
+# /etc/passwd file.
+# Enabled if the option is present.
+auth_local_users_only: true

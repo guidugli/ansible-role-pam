@@ -1,15 +1,13 @@
 ---
 # Run tasks to configure faillock.conf file
 
-# Configure faillock.conf settings
+# Configure pwquality.conf settings
 # These settigs are used later on pam modules
-- name: Ensure password locking parameters are configured
-  ansible.builtin.lineinfile:
-    path: /etc/security/faillock.conf
-    regexp: '^\s*{{ item.name }}\s*='
-    insertafter: '^\s*#\s*{{ item.name }}\s*='
-    line: "{{ item.name }} = {{ item.value }}"
-  loop:
-    - { name: 'deny', value: "{{ auth_deny_after | default(4, true) | int(4) }}" }
-    - { name: 'fail_interval', value: "{{ auth_fail_interval | default(900, true) | int(900) }}" }
-    - { name: 'unlock_time', value: "{{ auth_unlock_time | default(600, true) | int(600) }}" }
+- name: Update /etc/security/faillock.conf
+  ansible.builtin.template:
+    src: faillock.conf.j2
+    dest: /etc/security/faillock.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes

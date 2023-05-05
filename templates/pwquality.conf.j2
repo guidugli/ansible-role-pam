@@ -1,0 +1,123 @@
+# Configuration for systemwide password quality limits
+# Defaults:
+#
+# Number of characters in the new password that must not be present in the
+# old password.
+{% if auth_difok is defined %}
+difok = {{ auth_difok }}
+{% else %}
+# difok = 1
+{% endif %}
+
+# Minimum acceptable size for the new password (plus one if
+# credits are not disabled which is the default). (See pam_cracklib manual.)
+# Cannot be set to lower value than 6.
+minlen = {{ auth_min_length | default(14, true) }}
+
+# The maximum credit for having digits in the new password. If less than 0
+# it is the minimum number of digits in the new password.
+dcredit = {{ auth_dcredit | default(-1, true) }}
+
+# The maximum credit for having uppercase characters in the new password.
+# If less than 0 it is the minimum number of uppercase characters in the new
+# password.
+ucredit = {{ auth_ucredit | default(-1, true) }}
+
+# The maximum credit for having lowercase characters in the new password.
+# If less than 0 it is the minimum number of lowercase characters in the new
+# password.
+lcredit = {{ auth_lcredit | default(-1, true) }}
+
+# The maximum credit for having other characters in the new password.
+# If less than 0 it is the minimum number of other characters in the new
+# password.
+ocredit = {{ auth_ocredit | default(-1, true) }}
+
+# The minimum number of required classes of characters for the new
+# password (digits, uppercase, lowercase, others).
+# minclass = 0
+
+# The maximum number of allowed consecutive same characters in the new password.
+# The check is disabled if the value is 0.
+{% if auth_maxrepeat is defined %}
+maxrepeat = {{ auth_maxrepeat }}
+{% else %}
+# maxrepeat = 0
+{% endif %}
+
+# The maximum number of allowed consecutive characters of the same class in the
+# new password.
+# The check is disabled if the value is 0.
+{% if auth_maxclassrepeat is defined %}
+maxclassrepeat = {{ auth_maxclassrepeat }}
+{% else %}
+# maxclassrepeat = 0
+{% endif %}
+
+# Whether to check for the words from the passwd entry GECOS string of the user.
+# The check is enabled if the value is not 0.
+{% if auth_gecoscheck is defined %}
+gecoscheck = {{ auth_gecoscheck }}
+{% else %}
+# gecoscheck = 0
+{% endif %}
+
+# Whether to check for the words from the cracklib dictionary.
+# The check is enabled if the value is not 0.
+{% if auth_dictcheck is defined %}
+dictcheck = {{ auth_dictcheck }}
+{% else %}
+# dictcheck = 1
+{% endif %}
+
+# Whether to check if it contains the user name in some form.
+# The check is enabled if the value is not 0.
+{% if auth_usercheck is defined %}
+usercheck = {{ auth_usercheck }}
+{% else %}
+# usercheck = 1
+{% endif %}
+
+# Length of substrings from the username to check for in the password
+# The check is enabled if the value is greater than 0 and usercheck is enabled.
+{% if auth_usersubstr is defined %}
+usersubstr = {{ auth_usersubstr }}
+{% else %}
+# usersubstr = 0
+{% endif %}
+
+# Whether the check is enforced by the PAM module and possibly other
+# applications.
+# The new password is rejected if it fails the check and the value is not 0.
+{% if auth_enforcing is defined %}
+enforcing = {{ auth_enforcing }}
+{% else %}
+# enforcing = 1
+{% endif %}
+
+# Path to the cracklib dictionaries. Default is to use the cracklib default.
+{% if auth_dictpath is defined %}
+dictpath = {{ auth_dictpath }}
+{% else %}
+# dictpath =
+{% endif %}
+
+# Prompt user at most N times before returning with error. The default is 1.
+retry = {{ auth_retry | default(1, true) }}
+
+# Enforces pwquality checks on the root user password.
+# Enabled if the option is present.
+{% if auth_enforce_for_root %}
+enforce_for_root
+{% else %} 
+# enforce_for_root
+{% endif %}
+
+# Skip testing the password quality for users that are not present in the
+# /etc/passwd file.
+# Enabled if the option is present.
+{% if auth_local_users_only %}
+local_users_only
+{% else %} 
+# local_users_only
+{% endif %}

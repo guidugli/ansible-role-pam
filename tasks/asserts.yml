@@ -50,3 +50,38 @@
     - auth_lcredit
   loop_control:
     label: "{{ item }}: {{ vars[item] | default('undefined') }}"
+
+- name: Validate optional numeric variables are correctly set
+  ansible.builtin.assert:
+    that:
+      - vars[item] | int(-100) > -100
+    quiet: yes
+  when: vars[item] is defined
+  loop:
+    - auth_maxrepeat
+    - auth_maxclassrepeat
+    - auth_gecoscheck
+    - auth_dictcheck
+    - auth_usercheck
+    - auth_usersubstr
+    - auth_enforcing
+    - auth_difok
+    - auth_root_unlock_time
+  loop_control:
+    label: "{{ item }}: {{ vars[item] | default('undefined') }}"
+
+- name: Validate booleans
+  ansible.builtin.assert:
+    that:
+      - vars[item] is defined
+      - vars[item] | type_debug == 'bool'
+    quiet: yes
+  when: vars[item] is defined
+  loop:
+    - auth_enforce_for_root
+    - auth_local_users_only
+    - auth_audit
+    - auth_silent
+    - auth_no_log_info
+  loop_control:
+    label: "{{ item }}: {{ vars[item] | default('undefined') }}"
