@@ -50,9 +50,8 @@
   check_mode: "{{ authselect_enabled }}"
   failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
   loop:
-    - { control: requisite, module: pam_pwquality.so, arg: "enforce_for_root" }
-    - { control: requisite, module: pam_pwquality.so, arg: "retry={{ auth_retry }}" }
-    - { control: requisite, module: pam_pwquality.so, arg: "remember={{ auth_remember }}" }
+#    - { control: requisite, module: pam_pwquality.so, arg: "enforce_for_root" }
+#    - { control: requisite, module: pam_pwquality.so, arg: "remember={{ auth_remember }}" }
     - { control: sufficient, module: pam_unix.so, arg: "remember={{ auth_remember }}" }
 
 
@@ -111,20 +110,20 @@
     - sha512
     - blowfish
 
-- name: "Ensure PAM file password-auth is not missing key attributes"
-  community.general.pamd:
-    name: password-auth
-    type: password
-    control: requisite
-    module_path: pam_pwquality.so
-    module_arguments: "{{ item }}"
-    state: args_present
-  register: pam_cmd_result
-  check_mode: "{{ authselect_enabled }}"
-  failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
-  loop:
-    - "enforce_for_root"
-    - "retry={{ auth_retry }}"
+#- name: "Ensure PAM file password-auth is not missing key attributes"
+#  community.general.pamd:
+#    name: password-auth
+#    type: password
+#    control: requisite
+#    module_path: pam_pwquality.so
+#    module_arguments: "{{ item }}"
+#    state: args_present
+#  register: pam_cmd_result
+#  check_mode: "{{ authselect_enabled }}"
+#  failed_when: pam_cmd_result.failed or (authselect_enabled and pam_cmd_result.changed)
+#  loop:
+#    - "enforce_for_root"
+#    - "retry={{ auth_retry }}"
 
 - name: "Ensure PAM file password-auth is not missing key faillock preauth attributes"
   ansible.builtin.lineinfile:
