@@ -16,93 +16,80 @@ _install_packages:
 
 
 _authselect_sssd_options:
-  - with-custom-automount
-  - with-custom-group
-  - with-custom-netgroup
-  - with-custom-passwd
-  - with-custom-services
+  - with-altfiles
   - with-ecryptfs
   - with-faillock
   - with-files-access-provider
+  - with-files-domain
   - with-fingerprint
+  - with-gssapi
+  - with-libvirt
+  - with-mdns4
+  - with-mdns6
   - with-mkhomedir
   - with-pam-gnome-keyring
   - with-pam-u2f
   - with-pam-u2f-2fa
   - with-pamaccess
+  - with-pwhistory
   - with-silent-lastlog
   - with-smartcard
   - with-smartcard-lock-on-removal
   - with-smartcard-required
+  - with-subid
   - with-sudo
+  - with-systemd-homed
   - without-nullok
   - without-pam-u2f-nouserok
 
 _authselect_minimal_options:
   - with-altfiles
-  - with-custom-aliases
-  - with-custom-automount
-  - with-custom-ethers
-  - with-custom-group
-  - with-custom-hosts
-  - with-custom-initgroups
-  - with-custom-netgroup
-  - with-custom-networks
-  - with-custom-passwd
-  - with-custom-protocols
-  - with-custom-publickey
-  - with-custom-rpc
-  - with-custom-services
-  - with-custom-shadow
   - with-ecryptfs
   - with-faillock
+  - with-mdns4
+  - with-mdns6
   - with-mkhomedir
   - with-pamaccess
+  - with-pwhistory
   - with-silent-lastlog
   - without-nullok
 
 _authselect_winbind_options:
-  - with-custom-group
-  - with-custom-passwd
+  - with-altfiles
   - with-ecryptfs
   - with-faillock
   - with-fingerprint
   - with-krb5
+  - with-libvirt
+  - with-mdns4
+  - with-mdns6
   - with-mkhomedir
   - with-pam-gnome-keyring
   - with-pam-u2f
   - with-pam-u2f-2fa
   - with-pamaccess
+  - with-pwhistory
   - with-silent-lastlog
+  - with-systemd-homed
   - without-nullok
   - without-pam-u2f-nouserok
 
 _authselect_nis_options:
-  - with-custom-aliases
-  - with-custom-automount
-  - with-custom-ethers
-  - with-custom-group
-  - with-custom-hosts
-  - with-custom-initgroups
-  - with-custom-netgroup
-  - with-custom-networks
-  - with-custom-passwd
-  - with-custom-protocols
-  - with-custom-publickey
-  - with-custom-rpc
-  - with-custom-services
-  - with-custom-shadow
   - with-altfiles
   - with-ecryptfs
   - with-faillock
   - with-fingerprint
+  - with-libvirt
   - with-mdns4
   - with-mdns6
   - with-mkhomedir
   - with-nispwquality
+  - with-pam-gnome-keyring
   - with-pam-u2f
   - with-pam-u2f-2fa
   - with-pamaccess
+  - with-pwhistory
   - with-silent-lastlog
+  - with-systemd-homed
   - without-nullok
   - without-pam-u2f-nouserok
