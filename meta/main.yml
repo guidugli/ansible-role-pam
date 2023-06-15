@@ -27,6 +27,7 @@ galaxy_info:
         - bionic
     - name: Debian
       versions:
+        - bookworm
         - bullseye
         - buster
 
