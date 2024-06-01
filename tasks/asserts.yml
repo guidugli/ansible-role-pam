@@ -1,5 +1,14 @@
 ---
 
+- name: Retrieve available profiles
+  ansible.builtin.shell: "ls /usr/share/authselect/default/"
+  register: authselect_cmd
+  changed_when: false
+
+- name: Set variable with results
+  ansible.builtin.set_fact:
+    authselect_default_profiles: "{{ authselect_cmd.stdout_lines }}"
+
 - name: Validate authselect_enabled value
   ansible.builtin.assert:
     that:
@@ -7,22 +16,37 @@
       - authselect_enabled | type_debug == 'bool'
     quiet: yes
 
-- name: Validate authselect_profile_name value
+- name: Validate authselect_create_profile value
   ansible.builtin.assert:
     that:
-      - authselect_profile_name is defined
-      - authselect_profile_name is string
-      - authselect_profile_name | length > 0
+      - authselect_create_profile is defined
+      - authselect_create_profile | type_debug == 'bool'
     quiet: yes
-  when: authselect_enabled
+
+- name: Validate authselect_custom_profile_name value
+  ansible.builtin.assert:
+    that:
+      - authselect_custom_profile_name is defined
+      - authselect_custom_profile_name is string
+      - authselect_custom_profile_name | length > 0
+    quiet: yes
+  when: authselect_enabled and authselect_create_profile
 
 - name: Validate authselect_base_profile value
   ansible.builtin.assert:
     that:
       - authselect_base_profile is defined
-      - authselect_base_profile in ['sssd','minimal','nis','winbind']
+      - authselect_base_profile in authselect_default_profiles or authselect_base_profile in ['cis_local', 'cis_winbind', 'cis_sssd']
     quiet: yes
-  when: authselect_enabled
+  when: authselect_enabled and authselect_create_profile
+
+- name: Validate authselect_select_profile value
+  ansible.builtin.assert:
+    that:
+      - authselect_select_profile is defined
+      - authselect_select_profile in authselect_default_profiles or authselect_select_profile in ['cis_local', 'cis_winbind', 'cis_sssd']
+    quiet: yes
+  when: authselect_enabled and not authselect_create_profile
 
 - name: Validate authselect options
   ansible.builtin.assert:

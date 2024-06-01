@@ -6,12 +6,21 @@
 # settings will not be changed.
 authselect_enabled: "{{ _authselect_enabled }}"
 
+# Should create a new custom profile?
+authselect_create_profile: false
+
 # Name of the custom profile to be created
-authselect_profile_name: 'site-profile'
+authselect_custom_profile_name: 'site-profile'
 
 # Base of the custom profile. Allowed values
-# are sssd, nis, minimal and winbind
+# are the profiles available on /usr/share/authselect/default/
+# and cis_local, cis_sssd and cis_winbind
 authselect_base_profile: sssd
+
+# Profile to select (in case authselect_create_profile is false)
+# Valid values are the profiles available on /usr/share/authselect/default/
+# and cis_local, cis_sssd and cis_winbind
+authselect_select_profile: cis_local
 
 # If not defined, it will use 'with-faillock'
 # and 'without-nullok' as default

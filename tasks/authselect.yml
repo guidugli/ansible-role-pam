@@ -6,38 +6,57 @@
     state: present
     update_cache: yes
 
-- name: Create minimal base profile if required
-  when: authselect_base_profile == 'minimal'
+- name: Create vendor profiles
   block:
-    - name: If minimal base profile selected, check if it is available at target system
-      ansible.builtin.raw: "test -e /usr/share/authselect/default/minimal && echo -n true || echo -n false"
-      failed_when: false
-      changed_when: false
-      register: auth_mininal_cmd
-
     - name: Create target directory
       ansible.builtin.file:
-        path: /usr/share/authselect/default/minimal
+        path: "/usr/share/authselect/vendor/{{ item }}"
         state: directory
         mode: '0755'
-      when: auth_mininal_cmd.stdout == 'false'
+      loop:
+        - cis_local
+        - cis_sssd
+        - cis_winbind
 
     - name: Copy files to created directory
       ansible.builtin.template:
-        src: "minimal/{{ item }}.j2"
-        dest: "/usr/share/authselect/default/minimal/{{ item }}"
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
         force: no
         owner: root
         group: root
         mode: '0644'
       loop:
-        - README
-        - REQUIREMENTS
-        - nsswitch.conf
-        - password-auth
-        - postlogin
-        - system-auth
-      when: auth_mininal_cmd.stdout == 'false'
+        - { src: winbind/README.j2, dest: /usr/share/authselect/vendor/cis_winbind/README }
+        - { src: winbind/REQUIREMENTS.j2, dest: /usr/share/authselect/vendor/cis_winbind/REQUIREMENTS }
+        - { src: winbind/dconf-db.j2, dest: /usr/share/authselect/vendor/cis_winbind/dconf-db }
+        - { src: winbind/dconf-locks.j2, dest: /usr/share/authselect/vendor/cis_winbind/dconf-locks }
+        - { src: winbind/fingerprint-auth.j2, dest: /usr/share/authselect/vendor/cis_winbind/fingerprint-auth }
+        - { src: winbind/nsswitch.conf.j2, dest: /usr/share/authselect/vendor/cis_winbind/nsswitch.conf }
+        - { src: winbind/password-auth.j2, dest: /usr/share/authselect/vendor/cis_winbind/password-auth }
+        - { src: winbind/postlogin.j2, dest: /usr/share/authselect/vendor/cis_winbind/postlogin }
+        - { src: winbind/smartcard-auth.j2, dest: /usr/share/authselect/vendor/cis_winbind/smartcard-auth }
+        - { src: winbind/system-auth.j2, dest: /usr/share/authselect/vendor/cis_winbind/system-auth }
+        - { src: local/README.j2, dest: /usr/share/authselect/vendor/cis_local/README }
+        - { src: local/REQUIREMENTS.j2, dest: /usr/share/authselect/vendor/cis_local/REQUIREMENTS }
+        - { src: local/dconf-db.j2, dest: /usr/share/authselect/vendor/cis_local/dconf-db }
+        - { src: local/dconf-locks.j2, dest: /usr/share/authselect/vendor/cis_local/dconf-locks }
+        - { src: local/fingerprint-auth.j2, dest: /usr/share/authselect/vendor/cis_local/fingerprint-auth }
+        - { src: local/nsswitch.conf.j2, dest: /usr/share/authselect/vendor/cis_local/nsswitch.conf }
+        - { src: local/password-auth.j2, dest: /usr/share/authselect/vendor/cis_local/password-auth }
+        - { src: local/postlogin.j2, dest: /usr/share/authselect/vendor/cis_local/postlogin }
+        - { src: local/smartcard-auth.j2, dest: /usr/share/authselect/vendor/cis_local/smartcard-auth }
+        - { src: local/system-auth.j2, dest: /usr/share/authselect/vendor/cis_local/system-auth }
+        - { src: sssd/README.j2, dest: /usr/share/authselect/vendor/cis_sssd/README }
+        - { src: sssd/REQUIREMENTS.j2, dest: /usr/share/authselect/vendor/cis_sssd/REQUIREMENTS }
+        - { src: sssd/dconf-db.j2, dest: /usr/share/authselect/vendor/cis_sssd/dconf-db }
+        - { src: sssd/dconf-locks.j2, dest: /usr/share/authselect/vendor/cis_sssd/dconf-locks }
+        - { src: sssd/fingerprint-auth.j2, dest: /usr/share/authselect/vendor/cis_sssd/fingerprint-auth }
+        - { src: sssd/nsswitch.conf.j2, dest: /usr/share/authselect/vendor/cis_sssd/nsswitch.conf }
+        - { src: sssd/password-auth.j2, dest: /usr/share/authselect/vendor/cis_sssd/password-auth }
+        - { src: sssd/postlogin.j2, dest: /usr/share/authselect/vendor/cis_sssd/postlogin }
+        - { src: sssd/smartcard-auth.j2, dest: /usr/share/authselect/vendor/cis_sssd/smartcard-auth }
+        - { src: sssd/system-auth.j2, dest: /usr/share/authselect/vendor/cis_sssd/system-auth }
 
 # Create a custom authselect profile
 # If it already exists, the command will have
@@ -45,22 +64,11 @@
 - name: Create a custom authselect profile
   ansible.builtin.command:
     cmd: >
-      /usr/bin/authselect create-profile {{ authselect_profile_name }} -b {{ authselect_base_profile }} --symlink-meta
+      /usr/bin/authselect create-profile {{ authselect_custom_profile_name }} -b {{ authselect_base_profile }} 
   register: authselect_cmd_result
+  when: authselect_create_profile
   failed_when: authselect_cmd_result.rc != 0 and authselect_cmd_result.rc != 4
   changed_when: authselect_cmd_result.rc == 0
-
-- name: Copy templates to custom profile
-  ansible.builtin.template:
-    src: "{{ authselect_base_profile }}/{{ item }}.j2"
-    dest: "/etc/authselect/custom/{{ authselect_profile_name }}/{{ item }}"
-    force: yes
-    owner: root
-    group: root
-    mode: '0644'
-  loop:
-    - system-auth
-    - password-auth
 
 - name: Check current authselect profile
   ansible.builtin.shell: |
@@ -85,18 +93,22 @@
   ansible.builtin.debug:
     msg: "Current profile name: {{ authselect_current_profile }}"
 
-- name: Select created custom profile
+- name: Select profile
+  vars:
+    authselect_profile_name: "{{ 'custom/' ~ authselect_custom_profile_name if authselect_create_profile else authselect_select_profile }}"
   ansible.builtin.command:
-    cmd: "authselect select -b --force custom/{{ authselect_profile_name }} {{ authselect_options |
+    cmd: "authselect select -b --force {{ authselect_profile_name }} {{ authselect_options |
          default(['with-faillock', 'without-nullok']) | join(' ') }}"
   register: authselect_cmd_result
   failed_when: authselect_cmd_result.rc != 0
   changed_when: true
-  when: authselect_current_profile != 'custom/' + authselect_profile_name
+  when: authselect_current_profile != authselect_profile_name
 
 - name: Store new profile name
+  vars:
+    authselect_profile_name: "{{ 'custom/' ~ authselect_custom_profile_name if authselect_create_profile else authselect_select_profile }}"
   ansible.builtin.set_fact:
-    authselect_current_profile: "custom/{{ authselect_profile_name }}"
+    authselect_current_profile: "{{ authselect_profile_name }}"
 
 - name: Display profile name after processing
   ansible.builtin.debug:

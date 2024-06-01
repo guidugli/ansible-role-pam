@@ -3,6 +3,9 @@ Ansible Role: pam
 
 An Ansible Role that install and configure pam on RHEL/CentOS, Fedora and Debian/Ubuntu. In RedHat/CentOS and Fedora, it uses authselect to configure pam.
 
+If using authselect, the role will create 3 additional profiles: cis_local, cis_winbind and cis_sssd that follows the recommendations from CIS. These profiles
+can be selected or can be used as based for a new custom profile that allow users to do further changes.
+
 Requirements
 ------------
 
@@ -17,13 +20,18 @@ Role Variables
 
 If true, tasks will be executed to configure authselect settings; if false, authselect settings will not be changed.
 
+    authselect_create_profile: false
+
+If true, the role will create a custom profile that can be further customized by the user.
+If false, use one of the existing authselect profiles or the profiles created by the role (cis_local, cis_winbing, cis_sssd).
+
     authselect_profile_name: 'site-profile'
 
 Name of the custom profile to be created
 
     authselect_base_profile: sssd
 
-Base of the custom profile. Allowed values are sssd, nis, minimal and winbind
+Base of the custom profile. Allowed values can be listed with authselect list.
 
     authselect_options:
       - with-faillock
