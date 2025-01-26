@@ -33,7 +33,7 @@ jobs:
 
       - name: Lint code.
         run: |
-          yamllint .
+          yamllint -c .yamllint .
 
   molecule:
     name: Molecule
@@ -64,9 +64,6 @@ jobs:
 
       - name: Install test dependencies.
         run: pip3 install ansible molecule molecule-plugins[docker] docker
-
-      - name: Create virtual environment
-        run: python3 -m venv ansible-venv
 
       - name: Run Molecule tests.
         run: molecule test
