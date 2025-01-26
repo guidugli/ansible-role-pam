@@ -64,7 +64,7 @@
 - name: Create a custom authselect profile
   ansible.builtin.command:
     cmd: >
-      /usr/bin/authselect create-profile {{ authselect_custom_profile_name }} -b {{ authselect_base_profile }} 
+      /usr/bin/authselect create-profile {{ authselect_custom_profile_name }} -b {{ authselect_base_profile }}
   register: authselect_cmd_result
   when: authselect_create_profile
   failed_when: authselect_cmd_result.rc != 0 and authselect_cmd_result.rc != 4
