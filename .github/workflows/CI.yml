@@ -16,12 +16,7 @@ jobs:
 
   lint:
     name: Lint
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ vars.WORKING_DIR }}
-    environment: production
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check out the codebase.
         uses: actions/checkout@v4
@@ -39,13 +34,9 @@ jobs:
       - name: Lint code.
         run: |
           yamllint .
+
   molecule:
     name: Molecule
-
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ vars.WORKING_DIR }}
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -60,27 +51,22 @@ jobs:
           - fedora40
 
     steps:
+
+      - name: Check out the codebase.
+        uses: actions/checkout@v4
+        with:
+          path: ${{ vars.WORKING_DIR }}
+
       - name: Set up Python 3.
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
       - name: Install test dependencies.
-        run: apt update && apt install python3-venv ansible ca-certificates curl gnupg lsb-release
+        run: pip3 install ansible molecule molecule-plugins[docker] docker
 
       - name: Create virtual environment
         run: python3 -m venv ansible-venv
-
-      - name: Activate virtual environment
-        run: source ansible-venv/bin/activate && cd ansible-venv
-
-      - name: Install molecule
-        run: pip3 install wheel molecule 'molecule-plugins[docker]'
-
-      - name: Check out the codebase.
-        uses: actions/checkout@v4
-        with:
-          path: ${{ vars.WORKING_DIR }}
 
       - name: Run Molecule tests.
         run: molecule test
