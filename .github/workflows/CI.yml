@@ -13,14 +13,14 @@ name: CI
   schedule:
     - cron: "0 5 * * 0"
 
-defaults:
-  run:
-    working-directory: ${{ vars.WORKING_DIR }}
-
 jobs:
 
   lint:
     name: Lint
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ vars.WORKING_DIR }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out the codebase.
@@ -42,7 +42,11 @@ jobs:
 
   molecule:
     name: Molecule
-    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ vars.WORKING_DIR }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         distro:
