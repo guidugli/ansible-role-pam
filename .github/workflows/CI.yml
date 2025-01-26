@@ -3,6 +3,7 @@ name: CI
 
 # Controls when the workflow will run
 'on':
+  pull_request:
   push:
     branches: [ main ]
 
@@ -11,6 +12,10 @@ name: CI
 
   schedule:
     - cron: "0 5 * * 0"
+
+defaults:
+  run:
+    working-directory: ${{ vars.WORKING_DIR }}
 
 jobs:
 
