@@ -54,8 +54,8 @@ jobs:
           - ubuntu2204
           - debian12
           - debian11
+          - fedora42
           - fedora41
-          - fedora40
 
     steps:
 
@@ -70,7 +70,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install test dependencies.
-        run: pip3 install ansible molecule molecule-plugins[docker] docker
+        run: pip3 install ansible molecule molecule-plugins[docker] docker netaddr
 
       - name: Run Molecule tests.
         run: molecule test
