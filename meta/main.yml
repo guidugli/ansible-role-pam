@@ -22,7 +22,6 @@ galaxy_info:
       versions:
         - trixie
         - bookworm
-        - bullseye
 
   galaxy_tags:
     - pam
