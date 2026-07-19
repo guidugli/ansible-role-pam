@@ -1,11 +1,35 @@
 ---
 
+- name: Inspect apt package index files
+  ansible.builtin.find:
+    paths: /var/lib/apt/lists
+    patterns:
+      - '*_Packages'
+      - '*_Packages.lz4'
+      - '*_Packages.xz'
+      - '*_InRelease'
+      - 'Release'
+    file_type: file
+  register: pam_apt_index_files
+  failed_when: false
+
+- name: Refresh apt cache when package indexes are missing
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+  when: pam_apt_index_files.files | default([]) | length == 0
+
+- name: Refresh apt cache when package indexes are present
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  changed_when: false
+  when: pam_apt_index_files.files | default([]) | length > 0
+
 - name: Ensure libpam-pwquality is installed
   ansible.builtin.apt:
     name: libpam-pwquality
     state: present
-    update_cache: yes
-    cache_valid_time: 3600
 
 # Not using pamd module because the file already has a line
 # that just need to be uncommented

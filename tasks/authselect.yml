@@ -95,7 +95,8 @@
 
 - name: Select profile
   vars:
-    authselect_profile_name: "{{ 'custom/' ~ authselect_custom_profile_name if authselect_create_profile else authselect_select_profile }}"
+    authselect_profile_name: "{{ 'custom/' ~ authselect_custom_profile_name
+      if authselect_create_profile else authselect_select_profile }}"
   ansible.builtin.command:
     cmd: "authselect select -b --force {{ authselect_profile_name }} {{ authselect_options |
          default(['with-faillock', 'without-nullok']) | join(' ') }}"
@@ -106,7 +107,8 @@
 
 - name: Store new profile name
   vars:
-    authselect_profile_name: "{{ 'custom/' ~ authselect_custom_profile_name if authselect_create_profile else authselect_select_profile }}"
+    authselect_profile_name: "{{ 'custom/' ~ authselect_custom_profile_name
+      if authselect_create_profile else authselect_select_profile }}"
   ansible.builtin.set_fact:
     authselect_current_profile: "{{ authselect_profile_name }}"
 

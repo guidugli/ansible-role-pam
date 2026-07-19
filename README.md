@@ -1,3 +1,8 @@
+[![CI](https://github.com/guidugli/ansible-role-pam/actions/workflows/CI.yml/badge.svg)](https://github.com/guidugli/ansible-role-pam/actions/workflows/CI.yml)
+[![Release](https://img.shields.io/github/v/tag/guidugli/ansible-role-pam?sort=semver)](https://github.com/guidugli/ansible-role-pam/tags)
+[![Galaxy](https://img.shields.io/badge/galaxy-guidugli.pam-blue.svg)](https://galaxy.ansible.com/ui/standalone/roles/guidugli/pam/)
+[![License](https://img.shields.io/github/license/guidugli/ansible-role-pam)](LICENSE)
+
 Ansible Role: pam
 =========
 
