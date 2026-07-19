@@ -86,13 +86,6 @@
     - pam
     - validate
 
-- name: Show raw authselect output
-  ansible.builtin.debug:
-    var: authselect_current_cmd.stdout_lines
-  tags:
-    - pam
-    - validate
-
 - name: Store current authselect profile name
   ansible.builtin.set_fact:
     authselect_current_profile: >-

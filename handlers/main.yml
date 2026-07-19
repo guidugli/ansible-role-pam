@@ -1,7 +1,7 @@
 ---
 - name: Authselect apply changes
   ansible.builtin.command: authselect apply-changes
-  changed_when: true
+  changed_when: false
   when: authselect_enabled
   tags:
     - pam
