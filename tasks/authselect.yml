@@ -41,6 +41,7 @@
     - {src: winbind/postlogin.j2, dest: /usr/share/authselect/vendor/cis_winbind/postlogin}
     - {src: winbind/smartcard-auth.j2, dest: /usr/share/authselect/vendor/cis_winbind/smartcard-auth}
     - {src: winbind/system-auth.j2, dest: /usr/share/authselect/vendor/cis_winbind/system-auth}
+    - {src: winbind/switchable-auth.j2, dest: /usr/share/authselect/vendor/cis_winbind/switchable-auth}
     - {src: local/README.j2, dest: /usr/share/authselect/vendor/cis_local/README}
     - {src: local/REQUIREMENTS.j2, dest: /usr/share/authselect/vendor/cis_local/REQUIREMENTS}
     - {src: local/dconf-db.j2, dest: /usr/share/authselect/vendor/cis_local/dconf-db}
@@ -51,6 +52,7 @@
     - {src: local/postlogin.j2, dest: /usr/share/authselect/vendor/cis_local/postlogin}
     - {src: local/smartcard-auth.j2, dest: /usr/share/authselect/vendor/cis_local/smartcard-auth}
     - {src: local/system-auth.j2, dest: /usr/share/authselect/vendor/cis_local/system-auth}
+    - {src: local/switchable-auth.j2, dest: /usr/share/authselect/vendor/cis_local/switchable-auth}
     - {src: sssd/README.j2, dest: /usr/share/authselect/vendor/cis_sssd/README}
     - {src: sssd/REQUIREMENTS.j2, dest: /usr/share/authselect/vendor/cis_sssd/REQUIREMENTS}
     - {src: sssd/dconf-db.j2, dest: /usr/share/authselect/vendor/cis_sssd/dconf-db}
@@ -61,6 +63,7 @@
     - {src: sssd/postlogin.j2, dest: /usr/share/authselect/vendor/cis_sssd/postlogin}
     - {src: sssd/smartcard-auth.j2, dest: /usr/share/authselect/vendor/cis_sssd/smartcard-auth}
     - {src: sssd/system-auth.j2, dest: /usr/share/authselect/vendor/cis_sssd/system-auth}
+    - {src: sssd/switchable-auth.j2, dest: /usr/share/authselect/vendor/cis_sssd/switchable-auth}
   tags:
     - pam
     - config

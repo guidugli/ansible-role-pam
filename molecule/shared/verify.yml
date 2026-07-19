@@ -2,111 +2,312 @@
 - name: Verify pam role
   hosts: all
   gather_facts: true
+  vars:
+    pam_verify_su_group: "{{ lookup('env', 'PAM_VERIFY_SU_GROUP') | default('admin', true) }}"
+
   tasks:
-    - name: Check Debian and Ubuntu pwquality configuration exists
+    ###########################################################################
+    # Generic checks
+    ###########################################################################
+
+    - name: Verify /etc/security exists
       ansible.builtin.stat:
-        path: /etc/security/pwquality.conf.d/50-cis-pwquality.conf
-      register: pam_pwquality_conf
+        path: /etc/security
+      register: pam_security
+      tags:
+        - pam
+        - validate
+
+    - name: Assert /etc/security exists
+      ansible.builtin.assert:
+        that:
+          - pam_security.stat.exists
+        quiet: true
+      tags:
+        - pam
+        - validate
+
+    ###########################################################################
+    # Read shared policy files
+    ###########################################################################
+
+    - name: Read faillock.conf
+      ansible.builtin.slurp:
+        src: /etc/security/faillock.conf
+      register: faillock_conf
+      tags:
+        - pam
+        - validate
+
+    - name: Read pwhistory.conf
+      ansible.builtin.slurp:
+        src: /etc/security/pwhistory.conf
+      register: pwhistory_conf
+      tags:
+        - pam
+        - validate
+
+    ###########################################################################
+    # Read pwquality policy files by platform
+    ###########################################################################
+
+    - name: Read Fedora pwquality.conf
+      ansible.builtin.slurp:
+        src: /etc/security/pwquality.conf
+      register: fedora_pwquality_conf
+      when: ansible_facts['os_family'] == 'RedHat'
+      tags:
+        - pam
+        - validate
+
+    - name: Read Debian and Ubuntu pwquality policy
+      ansible.builtin.slurp:
+        src: /etc/security/pwquality.conf.d/50-cis-pwquality.conf
+      register: debian_pwquality_conf
       when: ansible_facts['os_family'] == 'Debian'
       tags:
         - pam
         - validate
 
-    - name: Assert Debian and Ubuntu pwquality configuration exists
+    ###########################################################################
+    # Shared /etc/security policy validation
+    ###########################################################################
+
+    - name: Verify faillock policy
+      vars:
+        faillock_text: "{{ faillock_conf.content | b64decode }}"
       ansible.builtin.assert:
         that:
-          - pam_pwquality_conf.stat.exists
+          - faillock_text | regex_search('(?m)^\\s*deny\\s*=\\s*5\\s*$') is not none
+          - faillock_text | regex_search('(?m)^\\s*unlock_time\\s*=\\s*900\\s*$') is not none
+        quiet: true
+      tags:
+        - pam
+        - validate
+
+    - name: Verify pwhistory policy
+      vars:
+        pwhistory_text: "{{ pwhistory_conf.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - pwhistory_text | regex_search('(?m)^\\s*remember\\s*=\\s*24\\s*$') is not none
+          - pwhistory_text | regex_search('(?m)^\\s*enforce_for_root\\s*$') is not none
+        quiet: true
+      tags:
+        - pam
+        - validate
+
+    ###########################################################################
+    # Fedora / Red Hat pwquality validation
+    ###########################################################################
+
+    - name: Verify Fedora pwquality policy
+      vars:
+        fedora_pwquality_text: "{{ fedora_pwquality_conf.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - fedora_pwquality_text | regex_search('(?m)^\\s*minlen\\s*=\\s*14\\s*$') is not none
+          - fedora_pwquality_text | regex_search('(?m)^\\s*difok\\s*=\\s*2\\s*$') is not none
+          - fedora_pwquality_text | regex_search('(?m)^\\s*maxrepeat\\s*=\\s*3\\s*$') is not none
+          - fedora_pwquality_text | regex_search('(?m)^\\s*dictcheck\\s*=\\s*1\\s*$') is not none
+          - fedora_pwquality_text | regex_search('(?m)^\\s*enforce_for_root\\s*$') is not none
+        quiet: true
+      when: ansible_facts['os_family'] == 'RedHat'
+      tags:
+        - pam
+        - validate
+
+    ###########################################################################
+    # Debian / Ubuntu pwquality validation
+    ###########################################################################
+
+    - name: Verify Debian and Ubuntu pwquality policy
+      vars:
+        debian_pwquality_text: "{{ debian_pwquality_conf.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - debian_pwquality_text | regex_search('(?m)^\\s*minlen\\s*=\\s*14\\s*$') is not none
+          - debian_pwquality_text | regex_search('(?m)^\\s*difok\\s*=\\s*2\\s*$') is not none
+          - debian_pwquality_text | regex_search('(?m)^\\s*maxrepeat\\s*=\\s*3\\s*$') is not none
+          - debian_pwquality_text | regex_search('(?m)^\\s*dictcheck\\s*=\\s*1\\s*$') is not none
+          - debian_pwquality_text | regex_search('(?m)^\\s*enforce_for_root\\s*$') is not none
         quiet: true
       when: ansible_facts['os_family'] == 'Debian'
       tags:
         - pam
         - validate
 
-    - name: Verify Debian and Ubuntu PAM common files include required modules
-      ansible.builtin.command: >-
-        grep -E '{{ item.pattern }}' {{ item.path }}
-      loop:
-        - {path: /etc/pam.d/common-auth, pattern: 'pam_faillock\.so.*preauth'}
-        - {path: /etc/pam.d/common-auth, pattern: 'pam_faillock\.so.*authfail'}
-        - {path: /etc/pam.d/common-account, pattern: 'pam_faillock\.so'}
-        - {path: /etc/pam.d/common-password, pattern: 'pam_pwquality\.so'}
-        - {path: /etc/pam.d/common-password, pattern: 'pam_pwhistory\.so'}
-        - {path: /etc/pam.d/common-password, pattern: 'pam_unix\.so.*(sha512|yescrypt)'}
-        - {path: /etc/pam.d/common-password, pattern: 'pam_unix\.so.*use_authtok'}
-      register: pam_common_grep
+    ###########################################################################
+    # Debian / Ubuntu generated PAM stack
+    ###########################################################################
+
+    - name: Read Debian and Ubuntu common-auth
+      ansible.builtin.slurp:
+        src: /etc/pam.d/common-auth
+      register: debian_common_auth
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - pam
+        - validate
+
+    - name: Read Debian and Ubuntu common-account
+      ansible.builtin.slurp:
+        src: /etc/pam.d/common-account
+      register: debian_common_account
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - pam
+        - validate
+
+    - name: Read Debian and Ubuntu common-password
+      ansible.builtin.slurp:
+        src: /etc/pam.d/common-password
+      register: debian_common_password
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - pam
+        - validate
+
+    - name: Verify Debian and Ubuntu PAM stack
+      vars:
+        debian_common_auth_text: "{{ debian_common_auth.content | b64decode }}"
+        debian_common_account_text: "{{ debian_common_account.content | b64decode }}"
+        debian_common_password_text: "{{ debian_common_password.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - debian_common_auth_text | regex_search('pam_faillock\\.so.*preauth') is not none
+          - debian_common_auth_text | regex_search('pam_faillock\\.so.*authfail') is not none
+          - debian_common_account_text | regex_search('pam_faillock\\.so') is not none
+          - debian_common_password_text | regex_search('pam_pwquality\\.so') is not none
+          - debian_common_password_text | regex_search('pam_pwhistory\\.so') is not none
+          - debian_common_password_text | regex_search('pam_unix\\.so') is not none
+          - debian_common_password_text | regex_search('pam_unix\\.so.*(sha512|yescrypt)') is not none
+          - debian_common_password_text | regex_search('pam_unix\\.so.*use_authtok') is not none
+        quiet: true
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - pam
+        - validate
+
+    ###########################################################################
+    # Fedora / Red Hat authselect state
+    ###########################################################################
+
+    - name: Get authselect status
+      ansible.builtin.command:
+        cmd: authselect current
+      register: authselect_current
       changed_when: false
-      when: ansible_facts['os_family'] == 'Debian'
-      loop_control:
-        label: "{{ item.path }} {{ item.pattern }}"
+      when: ansible_facts['os_family'] == 'RedHat'
       tags:
         - pam
         - validate
 
-    - name: Assert Debian and Ubuntu PAM common module checks passed
+    - name: Verify authselect profile
       ansible.builtin.assert:
         that:
-          - item.rc == 0
+          - authselect_current.stdout | regex_search('Profile ID:\\s+(custom/)?cis_') is not none
         quiet: true
-      loop: "{{ pam_common_grep.results | default([]) }}"
-      when: ansible_facts['os_family'] == 'Debian'
-      loop_control:
-        label: "{{ item.item.path }} {{ item.item.pattern }}"
+      when: ansible_facts['os_family'] == 'RedHat'
       tags:
         - pam
         - validate
 
-    - name: Verify Debian and Ubuntu security config files include CIS values
-      ansible.builtin.command: >-
-        grep -E '{{ item.pattern }}' {{ item.path }}
-      loop:
-        - {path: /etc/security/faillock.conf, pattern: '^\s*deny\s*=\s*[1-5]\b'}
-        - {path: /etc/security/faillock.conf, pattern: '^\s*unlock_time\s*=\s*(0|9[0-9][0-9]|[1-9][0-9]{3,})\b'}
-        - {path: /etc/security/pwquality.conf.d/50-cis-pwquality.conf, pattern: '^\s*difok\s*=\s*([2-9]|[1-9][0-9]+)\b'}
-        - {path: /etc/security/pwquality.conf.d/50-cis-pwquality.conf,
-           pattern: '^\s*minlen\s*=\s*(1[4-9]|[2-9][0-9]|[1-9][0-9]{2,})\b'}
-        - {path: /etc/security/pwquality.conf.d/50-cis-pwquality.conf, pattern: '^\s*maxrepeat\s*=\s*[1-3]\b'}
-        - {path: /etc/security/pwquality.conf.d/50-cis-pwquality.conf, pattern: '^\s*maxsequence\s*=\s*[1-3]\b'}
-        - {path: /etc/security/pwquality.conf.d/50-cis-pwquality.conf, pattern: '^\s*enforce_for_root\b'}
-        - {path: /etc/security/pwhistory.conf, pattern: '^\s*remember\s*=\s*(2[4-9]|[3-9][0-9]|[1-9][0-9]{2,})\b'}
-        - {path: /etc/security/pwhistory.conf, pattern: '^\s*enforce_for_root\b'}
-        - {path: /etc/security/pwhistory.conf, pattern: '^\s*use_authtok\b'}
-      register: pam_security_config_grep
-      changed_when: false
-      when: ansible_facts['os_family'] == 'Debian'
-      loop_control:
-        label: "{{ item.path }} {{ item.pattern }}"
-      tags:
-        - pam
-        - validate
-
-    - name: Assert Debian and Ubuntu security config checks passed
+    - name: Verify authselect features
       ansible.builtin.assert:
         that:
-          - item.rc == 0
+          - authselect_current.stdout | regex_search('with-faillock') is not none
+          - authselect_current.stdout | regex_search('without-nullok') is not none
         quiet: true
-      loop: "{{ pam_security_config_grep.results | default([]) }}"
-      when: ansible_facts['os_family'] == 'Debian'
-      loop_control:
-        label: "{{ item.item.path }} {{ item.item.pattern }}"
+      when: ansible_facts['os_family'] == 'RedHat'
       tags:
         - pam
         - validate
 
-    - name: Check generic pwquality configuration exists
-      ansible.builtin.stat:
-        path: /etc/security/pwquality.conf
-      register: pam_generic_pwquality_conf
-      when: ansible_facts['os_family'] != 'Debian'
+    ###########################################################################
+    # Fedora / Red Hat generated PAM stack
+    ###########################################################################
+
+    - name: Read Fedora system-auth
+      ansible.builtin.slurp:
+        src: /etc/pam.d/system-auth
+      register: fedora_system_auth
+      when: ansible_facts['os_family'] == 'RedHat'
       tags:
         - pam
         - validate
 
-    - name: Assert generic pwquality configuration exists
+    - name: Read Fedora password-auth
+      ansible.builtin.slurp:
+        src: /etc/pam.d/password-auth
+      register: fedora_password_auth
+      when: ansible_facts['os_family'] == 'RedHat'
+      tags:
+        - pam
+        - validate
+
+    - name: Verify Fedora PAM stack modules
+      vars:
+        fedora_stack_text: >-
+          {{
+            (fedora_system_auth.content | b64decode)
+            ~ '\n'
+            ~ (fedora_password_auth.content | b64decode)
+          }}
       ansible.builtin.assert:
         that:
-          - pam_generic_pwquality_conf.stat.exists
+          - fedora_stack_text | regex_search('pam_faillock\\.so.*preauth') is not none
+          - fedora_stack_text | regex_search('pam_faillock\\.so.*authfail') is not none
+          - fedora_stack_text | regex_search('pam_pwquality\\.so') is not none
+          - fedora_stack_text | regex_search('pam_pwhistory\\.so') is not none
+          - fedora_stack_text | regex_search('pam_pwhistory\\.so.*use_authtok') is not none
+          - fedora_stack_text | regex_search('pam_unix\\.so') is not none
+          - fedora_stack_text | regex_search('pam_unix\\.so.*yescrypt') is not none
+          - fedora_stack_text | regex_search('pam_unix\\.so.*use_authtok') is not none
         quiet: true
-      when: ansible_facts['os_family'] != 'Debian'
+      when: ansible_facts['os_family'] == 'RedHat'
+      tags:
+        - pam
+        - validate
+
+    ###########################################################################
+    # Ensure centralized policy values are not duplicated in PAM stacks
+    ###########################################################################
+
+    - name: Assert Debian and Ubuntu PAM stacks do not embed policy arguments
+      vars:
+        debian_stack_text: >-
+          {{
+            (debian_common_auth.content | b64decode)
+            ~ '\n'
+            ~ (debian_common_account.content | b64decode)
+            ~ '\n'
+            ~ (debian_common_password.content | b64decode)
+          }}
+      ansible.builtin.assert:
+        that: >-
+          - debian_stack_text |
+            regex_search('deny=|unlock_time=|fail_interval=|remember=|minlen=|difok=|maxrepeat=') is none
+        quiet: true
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - pam
+        - validate
+
+    - name: Assert Fedora PAM stacks do not embed policy arguments
+      vars:
+        fedora_stack_text: >-
+          {{
+            (fedora_system_auth.content | b64decode)
+            ~ '\n'
+            ~ (fedora_password_auth.content | b64decode)
+          }}
+      ansible.builtin.assert:
+        that: >-
+          - fedora_stack_text |
+            regex_search('deny=|unlock_time=|fail_interval=|remember=|minlen=|difok=|maxrepeat=') is none
+        quiet: true
+      when: ansible_facts['os_family'] == 'RedHat'
       tags:
         - pam
         - validate

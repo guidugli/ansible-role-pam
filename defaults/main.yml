@@ -10,6 +10,7 @@ authselect_select_profile: cis_local
 authselect_options:
   - with-faillock
   - without-nullok
+  - with-pwhistory
 
 # pam-auth-update management for Debian and Ubuntu systems.
 pam_auth_update_enabled: true
