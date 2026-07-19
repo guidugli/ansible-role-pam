@@ -3,7 +3,8 @@ argument_specs:
   main:
     short_description: Configure PAM authentication hardening.
     description:
-      - Configure PAM password quality, password history, faillock, authselect profiles, and su restrictions.
+      - Configure PAM password quality, password history, faillock, authselect profiles, pam-auth-update profiles,
+        and su restrictions.
     options:
       authselect_enabled:
         type: bool
@@ -32,18 +33,40 @@ argument_specs:
           - with-faillock
           - without-nullok
         description: Authselect feature options applied during profile selection.
+      pam_auth_update_enabled:
+        type: bool
+        default: true
+        description: Enable Debian and Ubuntu pam-auth-update based PAM management.
+      pam_auth_update_profiles:
+        type: list
+        elements: str
+        default:
+          - unix
+          - faillock
+          - faillock_notify
+          - pwquality
+          - pwhistory
+        description: pam-auth-update profiles enabled by the role on Debian and Ubuntu systems.
       auth_su_group:
         type: str
         default: admin
         description: Group whose members are allowed to use su.
       auth_remember:
         type: int
-        default: 5
+        default: 24
         description: Number of previous passwords remembered by pwhistory.
       auth_remember_file:
         type: str
         default: null
         description: Optional password history file path.
+      auth_pwhistory_enforce_for_root:
+        type: bool
+        default: true
+        description: Enforce password history for root through pwhistory.conf.
+      auth_pwhistory_use_authtok:
+        type: bool
+        default: true
+        description: Enable use_authtok in pwhistory.conf.
       auth_faillock_dir:
         type: str
         default: null
@@ -70,7 +93,7 @@ argument_specs:
         description: Interval in seconds during which failures count toward lockout.
       auth_unlock_time:
         type: int
-        default: 600
+        default: 900
         description: Seconds before a locked account is automatically re-enabled.
       auth_even_deny_root:
         type: bool
@@ -111,19 +134,27 @@ argument_specs:
       auth_enforce_for_root:
         type: bool
         default: true
-        description: Enforce password quality/history checks for root.
+        description: Enforce password quality checks for root.
       auth_local_users_only:
         type: bool
         default: true
         description: Apply local-user-only behavior where supported by PAM modules.
       auth_difok:
         type: int
-        default: null
-        description: Optional minimum number of character changes from the old password.
-      auth_maxrepeat:
+        default: 2
+        description: Minimum number of changed characters from the old password.
+      auth_minclass:
         type: int
         default: null
-        description: Optional maximum number of allowed consecutive same characters.
+        description: Optional minimum number of required character classes.
+      auth_maxrepeat:
+        type: int
+        default: 3
+        description: Maximum number of allowed consecutive same characters.
+      auth_maxsequence:
+        type: int
+        default: 3
+        description: Maximum length of monotonic character sequences.
       auth_maxclassrepeat:
         type: int
         default: null
@@ -134,8 +165,8 @@ argument_specs:
         description: Optional GECOS password-content check flag.
       auth_dictcheck:
         type: int
-        default: null
-        description: Optional dictionary check flag.
+        default: 1
+        description: Enable dictionary checking in pwquality.
       auth_usercheck:
         type: int
         default: null
@@ -146,8 +177,8 @@ argument_specs:
         description: Optional minimum user-name substring length checked in passwords.
       auth_enforcing:
         type: int
-        default: null
-        description: Optional password quality enforcement flag.
+        default: 1
+        description: Enforce pwquality rejection of weak passwords.
       auth_dictpath:
         type: str
         default: null

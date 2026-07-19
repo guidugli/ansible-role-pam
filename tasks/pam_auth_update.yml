@@ -1,0 +1,513 @@
+---
+- name: Install CIS pam-auth-update profile for faillock authfail
+  ansible.builtin.copy:
+    dest: /usr/share/pam-configs/faillock
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      Name: Enable pam_faillock to deny access
+      Default: yes
+      Priority: 0
+      Auth-Type: Primary
+      Auth:
+              [default=die] pam_faillock.so authfail
+  register: pam_auth_update_faillock_profile
+  tags:
+    - pam
+    - config
+
+- name: Install CIS pam-auth-update profile for faillock notification and account reset
+  ansible.builtin.copy:
+    dest: /usr/share/pam-configs/faillock_notify
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      Name: Notify of failed login attempts and reset count upon success
+      Default: yes
+      Priority: 1024
+      Auth-Type: Primary
+      Auth:
+              requisite pam_faillock.so preauth
+      Account-Type: Primary
+      Account:
+              required pam_faillock.so
+  register: pam_auth_update_faillock_notify_profile
+  tags:
+    - pam
+    - config
+
+- name: Install CIS pam-auth-update profile for pwquality
+  ansible.builtin.copy:
+    dest: /usr/share/pam-configs/pwquality
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      Name: Pwquality password strength checking
+      Default: yes
+      Priority: 1024
+      Conflicts: cracklib
+      Password-Type: Primary
+      Password:
+              requisite pam_pwquality.so retry={{ auth_retry }}
+  register: pam_auth_update_pwquality_profile
+  tags:
+    - pam
+    - config
+
+- name: Install CIS pam-auth-update profile for pwhistory
+  ansible.builtin.copy:
+    dest: /usr/share/pam-configs/pwhistory
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      Name: pwhistory password history checking
+      Default: yes
+      Priority: 1024
+      Password-Type: Primary
+      Password:
+              requisite pam_pwhistory.so
+  register: pam_auth_update_pwhistory_profile
+  tags:
+    - pam
+    - config
+
+- name: Check pam-auth-update unix profile exists
+  ansible.builtin.stat:
+    path: /usr/share/pam-configs/unix
+  register: pam_auth_update_unix_profile
+  tags:
+    - pam
+    - validate
+
+- name: Remove nullok from unix pam-auth-update profile
+  ansible.builtin.replace:
+    path: /usr/share/pam-configs/unix
+    regexp: '\s+nullok\b'
+    replace: ''
+  register: pam_auth_update_unix_nullok
+  when: pam_auth_update_unix_profile.stat.exists
+  tags:
+    - pam
+    - config
+
+- name: Remove remember from unix pam-auth-update profile
+  ansible.builtin.replace:
+    path: /usr/share/pam-configs/unix
+    regexp: '\s+remember=\d+\b'
+    replace: ''
+  register: pam_auth_update_unix_remember
+  when: pam_auth_update_unix_profile.stat.exists
+  tags:
+    - pam
+    - config
+
+- name: Ensure pam_unix password line includes use_authtok
+  ansible.builtin.lineinfile:
+    path: /usr/share/pam-configs/unix
+    regexp: '^(Password:\s+.*pam_unix\.so(?!.*\buse_authtok\b).*)$'
+    line: '\1 use_authtok'
+    backrefs: true
+  register: pam_auth_update_unix_use_authtok
+  when: pam_auth_update_unix_profile.stat.exists
+  tags:
+    - pam
+    - config
+
+- name: Ensure pam_unix password lines include yescrypt when missing strong hash
+  ansible.builtin.lineinfile:
+    path: /usr/share/pam-configs/unix
+    regexp: '^(Password(-Initial)?:\s+.*pam_unix\.so(?!.*\b(sha512|yescrypt)\b).*)$'
+    line: '\1 yescrypt'
+    backrefs: true
+  register: pam_auth_update_unix_hash
+  when: pam_auth_update_unix_profile.stat.exists
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock deny threshold
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*deny\s*='
+    line: "deny = {{ auth_deny_after }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  register: pam_faillock_deny
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock failure interval
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*fail_interval\s*='
+    line: "fail_interval = {{ auth_fail_interval }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  register: pam_faillock_fail_interval
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock unlock time
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*unlock_time\s*='
+    line: "unlock_time = {{ auth_unlock_time }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  register: pam_faillock_unlock_time
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock directory
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*dir\s*='
+    line: "dir = {{ auth_faillock_dir }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  register: pam_faillock_dir
+  when: auth_faillock_dir is not none
+  tags:
+    - pam
+    - config
+
+- name: Remove faillock directory line when unset
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*dir\s*='
+    state: absent
+  register: pam_faillock_dir_absent
+  when: auth_faillock_dir is none
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock audit flag
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*audit\s*$'
+    line: audit
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    state: "{{ 'present' if auth_audit else 'absent' }}"
+  register: pam_faillock_audit
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock silent flag
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*silent\s*$'
+    line: silent
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    state: "{{ 'present' if auth_silent else 'absent' }}"
+  register: pam_faillock_silent
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock no_log_info flag
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*no_log_info\s*$'
+    line: no_log_info
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    state: "{{ 'present' if auth_no_log_info else 'absent' }}"
+  register: pam_faillock_no_log_info
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock local_users_only flag
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*local_users_only\s*$'
+    line: local_users_only
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    state: "{{ 'present' if auth_local_users_only else 'absent' }}"
+  register: pam_faillock_local_users_only
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock even_deny_root flag
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*even_deny_root\s*$'
+    line: even_deny_root
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    state: "{{ 'present' if auth_even_deny_root else 'absent' }}"
+  register: pam_faillock_even_deny_root
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock root unlock time
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*root_unlock_time\s*='
+    line: "root_unlock_time = {{ auth_root_unlock_time }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  register: pam_faillock_root_unlock_time
+  when: auth_root_unlock_time is not none
+  tags:
+    - pam
+    - config
+
+- name: Remove faillock root unlock time when unset
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*root_unlock_time\s*='
+    state: absent
+  register: pam_faillock_root_unlock_time_absent
+  when: auth_root_unlock_time is none
+  tags:
+    - pam
+    - config
+
+- name: Configure faillock administrative group
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*admin_group\s*='
+    line: "admin_group = {{ auth_admin_group }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  register: pam_faillock_admin_group
+  when: auth_admin_group is not none
+  tags:
+    - pam
+    - config
+
+- name: Remove faillock administrative group when unset
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^\s*admin_group\s*='
+    state: absent
+  register: pam_faillock_admin_group_absent
+  when: auth_admin_group is none
+  tags:
+    - pam
+    - config
+
+- name: Ensure pwquality configuration directory exists
+  ansible.builtin.file:
+    path: /etc/security/pwquality.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags:
+    - pam
+    - config
+
+- name: Install CIS pwquality configuration
+  ansible.builtin.copy:
+    dest: /etc/security/pwquality.conf.d/50-cis-pwquality.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      # Managed by Ansible role guidugli.pam.
+      {% if auth_difok is not none %}
+      difok = {{ auth_difok }}
+      {% endif %}
+      minlen = {{ auth_min_length }}
+      {% if auth_minclass is not none %}
+      minclass = {{ auth_minclass }}
+      {% endif %}
+      dcredit = {{ auth_dcredit }}
+      ucredit = {{ auth_ucredit }}
+      ocredit = {{ auth_ocredit }}
+      lcredit = {{ auth_lcredit }}
+      {% if auth_maxrepeat is not none %}
+      maxrepeat = {{ auth_maxrepeat }}
+      {% endif %}
+      {% if auth_maxsequence is not none %}
+      maxsequence = {{ auth_maxsequence }}
+      {% endif %}
+      {% if auth_maxclassrepeat is not none %}
+      maxclassrepeat = {{ auth_maxclassrepeat }}
+      {% endif %}
+      {% if auth_gecoscheck is not none %}
+      gecoscheck = {{ auth_gecoscheck }}
+      {% endif %}
+      {% if auth_dictcheck is not none %}
+      dictcheck = {{ auth_dictcheck }}
+      {% endif %}
+      {% if auth_usercheck is not none %}
+      usercheck = {{ auth_usercheck }}
+      {% endif %}
+      {% if auth_usersubstr is not none %}
+      usersubstr = {{ auth_usersubstr }}
+      {% endif %}
+      {% if auth_enforcing is not none %}
+      enforcing = {{ auth_enforcing }}
+      {% endif %}
+      {% if auth_dictpath is not none %}
+      dictpath = {{ auth_dictpath }}
+      {% endif %}
+      {% if auth_enforce_for_root %}
+      enforce_for_root
+      {% endif %}
+      {% if auth_local_users_only %}
+      local_users_only
+      {% endif %}
+  register: pam_pwquality_config
+  tags:
+    - pam
+    - config
+
+- name: Configure pwhistory remember value
+  ansible.builtin.lineinfile:
+    path: /etc/security/pwhistory.conf
+    regexp: '^\s*remember\s*='
+    line: "remember = {{ auth_remember }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  register: pam_pwhistory_remember
+  tags:
+    - pam
+    - config
+
+- name: Configure pwhistory file
+  ansible.builtin.lineinfile:
+    path: /etc/security/pwhistory.conf
+    regexp: '^\s*file\s*='
+    line: "file = {{ auth_remember_file }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  register: pam_pwhistory_file
+  when: auth_remember_file is not none
+  tags:
+    - pam
+    - config
+
+- name: Remove pwhistory file when unset
+  ansible.builtin.lineinfile:
+    path: /etc/security/pwhistory.conf
+    regexp: '^\s*file\s*='
+    state: absent
+  register: pam_pwhistory_file_absent
+  when: auth_remember_file is none
+  tags:
+    - pam
+    - config
+
+- name: Configure pwhistory enforce_for_root flag
+  ansible.builtin.lineinfile:
+    path: /etc/security/pwhistory.conf
+    regexp: '^\s*enforce_for_root\s*$'
+    line: enforce_for_root
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    state: "{{ 'present' if auth_pwhistory_enforce_for_root else 'absent' }}"
+  register: pam_pwhistory_enforce_for_root
+  tags:
+    - pam
+    - config
+
+- name: Configure pwhistory use_authtok flag
+  ansible.builtin.lineinfile:
+    path: /etc/security/pwhistory.conf
+    regexp: '^\s*use_authtok\s*$'
+    line: use_authtok
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    state: "{{ 'present' if auth_pwhistory_use_authtok else 'absent' }}"
+  register: pam_pwhistory_use_authtok
+  tags:
+    - pam
+    - config
+
+- name: Check if required PAM modules are present in common files
+  ansible.builtin.command: >-
+    grep -E '{{ item.pattern }}' {{ item.path }}
+  loop:
+    - {path: /etc/pam.d/common-auth, pattern: 'pam_faillock\.so.*preauth'}
+    - {path: /etc/pam.d/common-auth, pattern: 'pam_faillock\.so.*authfail'}
+    - {path: /etc/pam.d/common-account, pattern: 'pam_faillock\.so'}
+    - {path: /etc/pam.d/common-password, pattern: 'pam_pwquality\.so'}
+    - {path: /etc/pam.d/common-password, pattern: 'pam_pwhistory\.so'}
+    - {path: /etc/pam.d/common-password, pattern: 'pam_unix\.so.*(sha512|yescrypt)'}
+    - {path: /etc/pam.d/common-password, pattern: 'pam_unix\.so.*use_authtok'}
+  register: pam_common_module_checks
+  failed_when: false
+  changed_when: false
+  loop_control:
+    label: "{{ item.path }} {{ item.pattern }}"
+  tags:
+    - pam
+    - validate
+
+- name: Decide whether pam-auth-update must run
+  ansible.builtin.set_fact:
+    pam_auth_update_run_required: >-
+      {{
+        pam_auth_update_faillock_profile.changed or
+        pam_auth_update_faillock_notify_profile.changed or
+        pam_auth_update_pwquality_profile.changed or
+        pam_auth_update_pwhistory_profile.changed or
+        (pam_auth_update_unix_nullok.changed | default(false)) or
+        (pam_auth_update_unix_remember.changed | default(false)) or
+        (pam_auth_update_unix_use_authtok.changed | default(false)) or
+        (pam_auth_update_unix_hash.changed | default(false)) or
+        (pam_common_module_checks.results | selectattr('rc', 'ne', 0) | list | length > 0)
+      }}
+  changed_when: false
+  tags:
+    - pam
+    - validate
+
+- name: Run pam-auth-update for CIS profiles
+  ansible.builtin.command: >-
+    pam-auth-update --force
+    {% for profile in pam_auth_update_profiles %} --enable {{ profile }}{% endfor %}
+  register: pam_auth_update_result
+  changed_when: pam_auth_update_run_required
+  when: pam_auth_update_run_required
+  tags:
+    - pam
+    - config

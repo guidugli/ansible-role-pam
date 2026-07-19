@@ -14,31 +14,42 @@
     - pam
     - config
 
-- name: Configure PAM settings
-  ansible.builtin.include_tasks: "{{ ansible_facts['os_family'] }}_pam.yml"
+- name: Configure Debian and Ubuntu PAM with pam-auth-update
+  ansible.builtin.include_tasks: Debian_pam.yml
+  when: ansible_facts['os_family'] == 'Debian'
   tags:
     - pam
     - config
 
-- name: Configure pwquality.conf
+- name: Configure Red Hat family PAM settings
+  ansible.builtin.include_tasks: RedHat_pam.yml
+  when: ansible_facts['os_family'] == 'RedHat'
+  tags:
+    - pam
+    - config
+
+- name: Configure pwquality.conf on non-Debian platforms
   ansible.builtin.include_tasks: pwquality.yml
+  when: ansible_facts['os_family'] != 'Debian'
   tags:
     - pam
     - config
 
-- name: Configure pwhistory.conf
+- name: Configure pwhistory.conf on non-Debian platforms
   ansible.builtin.include_tasks: pwhistory.yml
+  when: ansible_facts['os_family'] != 'Debian'
   tags:
     - pam
     - config
 
-- name: Configure faillock.conf
+- name: Configure faillock.conf on non-Debian platforms
   ansible.builtin.include_tasks: faillock.yml
   when: >-
-    (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] | int > 10) or
-    (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_major_version'] | int > 20) or
-    (ansible_facts['distribution'] == 'Fedora') or
-    authselect_enabled
+    ansible_facts['os_family'] != 'Debian' and
+    (
+      ansible_facts['distribution'] == 'Fedora' or
+      authselect_enabled
+    )
   tags:
     - pam
     - config

@@ -1,4 +1,4 @@
-Enable winbind for system authentication (following CIS benchmarks)
+Enable winbind for system authentication
 ========================================
 
 Selecting this profile will enable Samba's winbind as the source of identity
@@ -59,6 +59,9 @@ with-krb5::
 
 with-silent-lastlog::
     Do not produce pam_lastlog message during login.
+
+without-lastlog-showfailed::
+    Do not print number of failed login attempts during login.
 
 with-pamaccess::
     Check access.conf during account authorization.

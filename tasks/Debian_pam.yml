@@ -34,9 +34,9 @@
     - pam
     - install
 
-- name: Ensure libpam-pwquality is installed
+- name: Ensure Debian and Ubuntu PAM packages are installed
   ansible.builtin.apt:
-    name: libpam-pwquality
+    name: "{{ pam_debian_packages }}"
     state: present
   tags:
     - pam
@@ -59,20 +59,9 @@
     - pam
     - config
 
-- name: Copy Debian and Ubuntu PAM templates
-  ansible.builtin.template:
-    src: "{{ ansible_facts['distribution'] }}/{{ ansible_facts['distribution_major_version'] }}/{{ item }}.j2"
-    dest: "/etc/pam.d/{{ item }}"
-    owner: root
-    group: root
-    mode: '0644'
-  loop:
-    - common-account
-    - common-auth
-    - common-password
-    - common-session
-    - common-session-noninteractive
-    - su
+- name: Configure Debian and Ubuntu PAM using pam-auth-update
+  ansible.builtin.include_tasks: pam_auth_update.yml
+  when: pam_auth_update_enabled
   tags:
     - pam
     - config

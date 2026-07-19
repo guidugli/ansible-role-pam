@@ -27,6 +27,26 @@
     - pam
     - validate
 
+- name: Validate pam-auth-update controls
+  ansible.builtin.assert:
+    that:
+      - pam_auth_update_enabled is boolean
+      - pam_auth_update_profiles is iterable
+      - auth_deny_after | int >= 1
+      - auth_deny_after | int <= 5
+      - auth_unlock_time | int == 0 or auth_unlock_time | int >= 900
+      - auth_unlock_time | int <= 604800
+      - auth_remember | int >= 24
+      - auth_min_length | int >= 14
+      - auth_difok is none or auth_difok | int >= 2
+      - auth_maxrepeat is none or (auth_maxrepeat | int >= 1 and auth_maxrepeat | int <= 3)
+      - auth_maxsequence is none or (auth_maxsequence | int >= 1 and auth_maxsequence | int <= 3)
+      - auth_root_unlock_time is none or auth_root_unlock_time | int >= 60
+    quiet: true
+  tags:
+    - pam
+    - validate
+
 - name: Validate authselect custom profile settings
   ansible.builtin.assert:
     that:
@@ -95,7 +115,9 @@
     quiet: true
   when: lookup('vars', item) is not none
   loop:
+    - auth_minclass
     - auth_maxrepeat
+    - auth_maxsequence
     - auth_maxclassrepeat
     - auth_gecoscheck
     - auth_dictcheck
@@ -140,6 +162,8 @@
     - auth_silent
     - auth_no_log_info
     - auth_even_deny_root
+    - auth_pwhistory_enforce_for_root
+    - auth_pwhistory_use_authtok
   loop_control:
     label: "{{ item }}={{ lookup('vars', item) }}"
   tags:

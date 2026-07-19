@@ -15,6 +15,20 @@ _authselect_enabled: >-
       | bool
   }}
 
+_pam_debian_base_packages:
+  - libpam-runtime
+  - libpam-modules
+  - libpam-pwquality
+
+_pam_ubuntu_extra_packages:
+  - cracklib-runtime
+
+pam_debian_packages: >-
+  {{
+    _pam_debian_base_packages
+    + (_pam_ubuntu_extra_packages if ansible_facts['distribution'] == 'Ubuntu' else [])
+  }}
+
 _install_packages:
   Debian:
     - libpam-pwquality

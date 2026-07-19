@@ -1,7 +1,7 @@
 ---
 # defaults file for pam
 
-# Authselect management
+# Authselect management for Red Hat/Fedora family systems.
 authselect_enabled: "{{ _authselect_enabled }}"
 authselect_create_profile: false
 authselect_custom_profile_name: site-profile
@@ -11,21 +11,32 @@ authselect_options:
   - with-faillock
   - without-nullok
 
+# pam-auth-update management for Debian and Ubuntu systems.
+pam_auth_update_enabled: true
+pam_auth_update_profiles:
+  - unix
+  - faillock
+  - faillock_notify
+  - pwquality
+  - pwhistory
+
 # su restriction
 auth_su_group: admin
 
-# pwhistory policy
-auth_remember: 5
+# pwhistory policy. CIS Debian 13 and Ubuntu 24.04 PAM sections require remember >= 24.
+auth_remember: 24
 auth_remember_file: null
+auth_pwhistory_enforce_for_root: true
+auth_pwhistory_use_authtok: true
 
-# faillock policy
+# faillock policy. CIS requires deny <= 5 and unlock_time = 0 or >= 900.
 auth_faillock_dir: null
 auth_audit: false
 auth_silent: false
 auth_no_log_info: false
 auth_deny_after: 5
 auth_fail_interval: 900
-auth_unlock_time: 600
+auth_unlock_time: 900
 auth_even_deny_root: false
 auth_root_unlock_time: null
 auth_admin_group: null
@@ -40,13 +51,15 @@ auth_lcredit: -1
 auth_enforce_for_root: true
 auth_local_users_only: true
 
-# Optional pwquality advanced settings. A null value means "do not render".
-auth_difok: null
-auth_maxrepeat: null
+# CIS pwquality hardening settings. A null value means "do not render".
+auth_difok: 2
+auth_minclass: null
+auth_maxrepeat: 3
+auth_maxsequence: 3
 auth_maxclassrepeat: null
 auth_gecoscheck: null
-auth_dictcheck: null
+auth_dictcheck: 1
 auth_usercheck: null
 auth_usersubstr: null
-auth_enforcing: null
+auth_enforcing: 1
 auth_dictpath: null
