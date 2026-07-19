@@ -1,8 +1,4 @@
 ---
-# Run tasks to configure faillock.conf file
-
-# Configure pwquality.conf settings
-# These settigs are used later on pam modules
 - name: Update /etc/security/faillock.conf
   ansible.builtin.template:
     src: faillock.conf.j2
@@ -10,4 +6,7 @@
     owner: root
     group: root
     mode: '0644'
-    backup: yes
+    backup: true
+  tags:
+    - pam
+    - config

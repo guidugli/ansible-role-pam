@@ -1,0 +1,154 @@
+---
+argument_specs:
+  main:
+    short_description: Configure PAM authentication hardening.
+    description:
+      - Configure PAM password quality, password history, faillock, authselect profiles, and su restrictions.
+    options:
+      authselect_enabled:
+        type: bool
+        default: "{{ _authselect_enabled }}"
+        description: Enable authselect management on distributions that support it.
+      authselect_create_profile:
+        type: bool
+        default: false
+        description: Create a custom authselect profile from authselect_base_profile.
+      authselect_custom_profile_name:
+        type: str
+        default: site-profile
+        description: Name of the custom authselect profile to create.
+      authselect_base_profile:
+        type: str
+        default: sssd
+        description: Base authselect profile used when creating a custom profile.
+      authselect_select_profile:
+        type: str
+        default: cis_local
+        description: Authselect profile to select when not creating a custom profile.
+      authselect_options:
+        type: list
+        elements: str
+        default:
+          - with-faillock
+          - without-nullok
+        description: Authselect feature options applied during profile selection.
+      auth_su_group:
+        type: str
+        default: admin
+        description: Group whose members are allowed to use su.
+      auth_remember:
+        type: int
+        default: 5
+        description: Number of previous passwords remembered by pwhistory.
+      auth_remember_file:
+        type: str
+        default: null
+        description: Optional password history file path.
+      auth_faillock_dir:
+        type: str
+        default: null
+        description: Optional faillock failure-record directory.
+      auth_audit:
+        type: bool
+        default: false
+        description: Log unknown user names for faillock.
+      auth_silent:
+        type: bool
+        default: false
+        description: Suppress faillock informative messages.
+      auth_no_log_info:
+        type: bool
+        default: false
+        description: Suppress faillock informational syslog messages.
+      auth_deny_after:
+        type: int
+        default: 5
+        description: Consecutive failed logins before account lockout.
+      auth_fail_interval:
+        type: int
+        default: 900
+        description: Interval in seconds during which failures count toward lockout.
+      auth_unlock_time:
+        type: int
+        default: 600
+        description: Seconds before a locked account is automatically re-enabled.
+      auth_even_deny_root:
+        type: bool
+        default: false
+        description: Allow root account lockout through faillock.
+      auth_root_unlock_time:
+        type: int
+        default: null
+        description: Optional root-specific unlock time in seconds.
+      auth_admin_group:
+        type: str
+        default: null
+        description: Optional faillock administrative group.
+      auth_retry:
+        type: int
+        default: 3
+        description: Number of password prompt retries.
+      auth_min_length:
+        type: int
+        default: 14
+        description: Minimum password length.
+      auth_dcredit:
+        type: int
+        default: -1
+        description: Digit credit, or minimum digits when negative.
+      auth_ucredit:
+        type: int
+        default: -1
+        description: Uppercase credit, or minimum uppercase characters when negative.
+      auth_ocredit:
+        type: int
+        default: -1
+        description: Other-character credit, or minimum special characters when negative.
+      auth_lcredit:
+        type: int
+        default: -1
+        description: Lowercase credit, or minimum lowercase characters when negative.
+      auth_enforce_for_root:
+        type: bool
+        default: true
+        description: Enforce password quality/history checks for root.
+      auth_local_users_only:
+        type: bool
+        default: true
+        description: Apply local-user-only behavior where supported by PAM modules.
+      auth_difok:
+        type: int
+        default: null
+        description: Optional minimum number of character changes from the old password.
+      auth_maxrepeat:
+        type: int
+        default: null
+        description: Optional maximum number of allowed consecutive same characters.
+      auth_maxclassrepeat:
+        type: int
+        default: null
+        description: Optional maximum number of consecutive characters from the same class.
+      auth_gecoscheck:
+        type: int
+        default: null
+        description: Optional GECOS password-content check flag.
+      auth_dictcheck:
+        type: int
+        default: null
+        description: Optional dictionary check flag.
+      auth_usercheck:
+        type: int
+        default: null
+        description: Optional user-name password-content check flag.
+      auth_usersubstr:
+        type: int
+        default: null
+        description: Optional minimum user-name substring length checked in passwords.
+      auth_enforcing:
+        type: int
+        default: null
+        description: Optional password quality enforcement flag.
+      auth_dictpath:
+        type: str
+        default: null
+        description: Optional alternative cracklib dictionary path.

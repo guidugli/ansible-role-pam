@@ -1,28 +1,44 @@
 ---
 # tasks file for pam
 
-- name: Execute role tasks
-  block:
+- name: Check input variables
+  ansible.builtin.include_tasks: asserts.yml
+  tags:
+    - pam
+    - validate
 
-    # Check input variables
-    - name: Check input variables (include asserts.yml)
-      ansible.builtin.include_tasks: asserts.yml
+- name: Configure authselect
+  ansible.builtin.include_tasks: authselect.yml
+  when: authselect_enabled
+  tags:
+    - pam
+    - config
 
-    - name: Configure authselect (include authselect.yml)
-      ansible.builtin.include_tasks: authselect.yml
-      when: authselect_enabled
+- name: Configure PAM settings
+  ansible.builtin.include_tasks: "{{ ansible_facts['os_family'] }}_pam.yml"
+  tags:
+    - pam
+    - config
 
-    - name: Configure PAM settings
-      ansible.builtin.include_tasks: "{{ ansible_os_family }}_pam.yml"
+- name: Configure pwquality.conf
+  ansible.builtin.include_tasks: pwquality.yml
+  tags:
+    - pam
+    - config
 
-    - name: Configure pwquality.conf
-      ansible.builtin.include_tasks: pwquality.yml
+- name: Configure pwhistory.conf
+  ansible.builtin.include_tasks: pwhistory.yml
+  tags:
+    - pam
+    - config
 
-    - name: Configure pwhistory.conf
-      ansible.builtin.include_tasks: pwhistory.yml
-
-    - name: Configure faillock.conf
-      ansible.builtin.include_tasks: faillock.yml
-      when: (ansible_distribution == 'Debian' and ansible_distribution_major_version|int > 10) or
-            (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int > 20) or
-            (ansible_distribution == 'Fedora') or authselect_enabled
+- name: Configure faillock.conf
+  ansible.builtin.include_tasks: faillock.yml
+  when: >-
+    (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] | int > 10) or
+    (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_major_version'] | int > 20) or
+    (ansible_facts['distribution'] == 'Fedora') or
+    authselect_enabled
+  tags:
+    - pam
+    - config

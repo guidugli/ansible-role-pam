@@ -1,75 +1,80 @@
 ---
-
-- name: Retrieve available profiles
-  ansible.builtin.shell: "ls /usr/share/authselect/default/"
+- name: Retrieve available authselect profiles
+  ansible.builtin.command: ls /usr/share/authselect/default/
   register: authselect_cmd
   changed_when: false
   when: authselect_enabled
+  tags:
+    - pam
+    - validate
 
-
-- name: Set variable with results
+- name: Set available authselect profile facts
   ansible.builtin.set_fact:
-    authselect_default_profiles: "{{ authselect_cmd.stdout_lines }}"
+    authselect_default_profiles: "{{ authselect_cmd.stdout_lines | default([]) }}"
+  changed_when: false
   when: authselect_enabled
+  tags:
+    - pam
+    - validate
 
-- name: Validate authselect_enabled value
+- name: Validate authselect booleans
   ansible.builtin.assert:
     that:
-      - authselect_enabled is defined
-      - authselect_enabled | type_debug == 'bool'
-    quiet: yes
-  when: authselect_enabled
+      - authselect_enabled is boolean
+      - authselect_create_profile is boolean
+    quiet: true
+  tags:
+    - pam
+    - validate
 
-- name: Validate authselect_create_profile value
+- name: Validate authselect custom profile settings
   ansible.builtin.assert:
     that:
-      - authselect_create_profile is defined
-      - authselect_create_profile | type_debug == 'bool'
-    quiet: yes
-  when: authselect_enabled
-
-- name: Validate authselect_custom_profile_name value
-  ansible.builtin.assert:
-    that:
-      - authselect_custom_profile_name is defined
       - authselect_custom_profile_name is string
       - authselect_custom_profile_name | length > 0
-    quiet: yes
-  when: authselect_enabled and authselect_create_profile
+      - authselect_base_profile in authselect_default_profiles
+        or authselect_base_profile in ['cis_local', 'cis_winbind', 'cis_sssd']
+    quiet: true
+  when:
+    - authselect_enabled
+    - authselect_create_profile
+  tags:
+    - pam
+    - validate
 
-- name: Validate authselect_base_profile value
+- name: Validate authselect selected profile
   ansible.builtin.assert:
     that:
-      - authselect_base_profile is defined
-      - authselect_base_profile in authselect_default_profiles or authselect_base_profile in ['cis_local', 'cis_winbind', 'cis_sssd']
-    quiet: yes
-  when: authselect_enabled and authselect_create_profile
-
-- name: Validate authselect_select_profile value
-  ansible.builtin.assert:
-    that:
-      - authselect_select_profile is defined
-      - authselect_select_profile in authselect_default_profiles or authselect_select_profile in ['cis_local', 'cis_winbind', 'cis_sssd']
-    quiet: yes
-  when: authselect_enabled and not authselect_create_profile
+      - authselect_select_profile in authselect_default_profiles
+        or authselect_select_profile in ['cis_local', 'cis_winbind', 'cis_sssd']
+    quiet: true
+  when:
+    - authselect_enabled
+    - not authselect_create_profile
+  tags:
+    - pam
+    - validate
 
 - name: Validate authselect options
   ansible.builtin.assert:
     that:
-      - item is defined
-      - item in vars['_authselect_' + authselect_base_profile + '_options']
-    quiet: yes
+      - item in lookup('vars', '_authselect_' + authselect_base_profile + '_options')
+    quiet: true
   loop: "{{ authselect_options | default([]) }}"
+  when: authselect_enabled
+  tags:
+    - pam
+    - validate
 
-- name: Validate numeric variables are correctly set
+- name: Validate mandatory numeric variables
   ansible.builtin.assert:
     that:
-      - vars[item] is defined
-      - vars[item] | int(-100) > -100
-    quiet: yes
+      - lookup('vars', item) | int(-100) > -100
+    quiet: true
   loop:
     - auth_remember
     - auth_deny_after
+    - auth_fail_interval
     - auth_unlock_time
     - auth_retry
     - auth_min_length
@@ -78,14 +83,17 @@
     - auth_ocredit
     - auth_lcredit
   loop_control:
-    label: "{{ item }}: {{ vars[item] | default('undefined') }}"
+    label: "{{ item }}={{ lookup('vars', item) }}"
+  tags:
+    - pam
+    - validate
 
-- name: Validate optional numeric variables are correctly set
+- name: Validate optional numeric variables
   ansible.builtin.assert:
     that:
-      - vars[item] | int(-100) > -100
-    quiet: yes
-  when: vars[item] is defined
+      - lookup('vars', item) | int(-100) > -100
+    quiet: true
+  when: lookup('vars', item) is not none
   loop:
     - auth_maxrepeat
     - auth_maxclassrepeat
@@ -97,20 +105,43 @@
     - auth_difok
     - auth_root_unlock_time
   loop_control:
-    label: "{{ item }}: {{ vars[item] | default('undefined') }}"
+    label: "{{ item }}={{ lookup('vars', item) }}"
+  tags:
+    - pam
+    - validate
 
-- name: Validate booleans
+- name: Validate optional string variables
   ansible.builtin.assert:
     that:
-      - vars[item] is defined
-      - vars[item] | type_debug == 'bool'
-    quiet: yes
-  when: vars[item] is defined
+      - lookup('vars', item) is string
+      - lookup('vars', item) | length > 0
+    quiet: true
+  when: lookup('vars', item) is not none
+  loop:
+    - auth_faillock_dir
+    - auth_admin_group
+    - auth_remember_file
+    - auth_dictpath
+  loop_control:
+    label: "{{ item }}={{ lookup('vars', item) }}"
+  tags:
+    - pam
+    - validate
+
+- name: Validate boolean variables
+  ansible.builtin.assert:
+    that:
+      - lookup('vars', item) is boolean
+    quiet: true
   loop:
     - auth_enforce_for_root
     - auth_local_users_only
     - auth_audit
     - auth_silent
     - auth_no_log_info
+    - auth_even_deny_root
   loop_control:
-    label: "{{ item }}: {{ vars[item] | default('undefined') }}"
+    label: "{{ item }}={{ lookup('vars', item) }}"
+  tags:
+    - pam
+    - validate

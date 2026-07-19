@@ -1,26 +1,14 @@
-# Configuration for remembering the last passwords used by a user.
-#
-# Enable the debugging logs.
-# Enabled if option is present.
-# debug
-#
-# root account's passwords are also remembered.
-# Enabled if option is present.
-{% if auth_enforce_for_root %}
-enforce_for_root
-{% else %}
-# enforce_for_root
+# Managed by Ansible. Local changes may be overwritten.
+# See pwhistory.conf(5).
+
+# Number of previous passwords to remember.
+remember = {{ auth_remember }}
+
+{% if auth_remember_file is not none %}
+# Password history file.
+file = {{ auth_remember_file }}
 {% endif %}
-
-# Number of passwords to remember.
-# The default is 10.
-remember = {{ auth_remember | default(10, true) }}
-
-# Number of times to prompt for the password.
-# The default is 1.
-retry = {{ auth_retry | default(1, true) }}
-
-# The directory where the last passwords are kept.
-# The default is /etc/security/opasswd.
-file = {{ auth_remember_file | default('/etc/security/opasswd') }}
-
+{% if auth_enforce_for_root %}
+# Enforce password history for root.
+enforce_for_root
+{% endif %}

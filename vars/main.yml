@@ -8,12 +8,20 @@ _authselect_systems:
   CentOS-8: true
   Fedora: true
 
-_authselect_enabled: "{{ _authselect_systems[ansible_distribution ~ '-' ~ ansible_distribution_major_version] |
-                     default(_authselect_systems[ansible_distribution]) | default(false) | bool }}"
+_authselect_enabled: >-
+  {{
+    _authselect_systems[ansible_facts['distribution'] ~ '-' ~ ansible_facts['distribution_major_version']]
+      | default(_authselect_systems[ansible_facts['distribution']] | default(false))
+      | bool
+  }}
 
 _install_packages:
-  Debian: ['libpam-pwquality']
-
+  Debian:
+    - libpam-pwquality
+  RedHat:
+    - libpwquality
+  Fedora:
+    - libpwquality
 
 _authselect_sssd_options:
   - with-altfiles
@@ -74,7 +82,7 @@ _authselect_winbind_options:
   - without-nullok
   - without-pam-u2f-nouserok
 
-_authselect_nis_options:
+_authselect_local_options:
   - with-altfiles
   - with-ecryptfs
   - with-faillock
@@ -83,7 +91,6 @@ _authselect_nis_options:
   - with-mdns4
   - with-mdns6
   - with-mkhomedir
-  - with-nispwquality
   - with-pam-gnome-keyring
   - with-pam-u2f
   - with-pam-u2f-2fa

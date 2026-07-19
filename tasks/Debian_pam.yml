@@ -1,5 +1,4 @@
 ---
-
 - name: Inspect apt package index files
   ansible.builtin.find:
     paths: /var/lib/apt/lists
@@ -12,12 +11,18 @@
     file_type: file
   register: pam_apt_index_files
   failed_when: false
+  tags:
+    - pam
+    - install
 
 - name: Refresh apt cache when package indexes are missing
   ansible.builtin.apt:
     update_cache: true
   changed_when: false
   when: pam_apt_index_files.files | default([]) | length == 0
+  tags:
+    - pam
+    - install
 
 - name: Refresh apt cache when package indexes are present
   ansible.builtin.apt:
@@ -25,34 +30,39 @@
     cache_valid_time: 3600
   changed_when: false
   when: pam_apt_index_files.files | default([]) | length > 0
+  tags:
+    - pam
+    - install
 
 - name: Ensure libpam-pwquality is installed
   ansible.builtin.apt:
     name: libpam-pwquality
     state: present
-
-# Not using pamd module because the file already has a line
-# that just need to be uncommented
-- name: Ensure access to the su command is restricted
   tags:
-    - su_restrict
-  block:
-    - name: "Ensure group exists: {{ auth_su_group }}"
-      ansible.builtin.group:
-        name: "{{ auth_su_group }}"
-        state: present
+    - pam
+    - install
 
-    - name: "Add root to group: {{ auth_su_group }}"
-      ansible.builtin.user:
-        name: root
-        groups: "{{ auth_su_group }}"
-        append: yes
+- name: Ensure su restriction group exists
+  ansible.builtin.group:
+    name: "{{ auth_su_group }}"
+    state: present
+  tags:
+    - pam
+    - config
 
-- name: Copy Debian/Ubuntu templates
+- name: Ensure root is a member of su restriction group
+  ansible.builtin.user:
+    name: root
+    groups: "{{ auth_su_group }}"
+    append: true
+  tags:
+    - pam
+    - config
+
+- name: Copy Debian and Ubuntu PAM templates
   ansible.builtin.template:
-    src: "{{ ansible_distribution }}/{{ ansible_distribution_major_version }}/{{ item }}.j2"
+    src: "{{ ansible_facts['distribution'] }}/{{ ansible_facts['distribution_major_version'] }}/{{ item }}.j2"
     dest: "/etc/pam.d/{{ item }}"
-    force: yes
     owner: root
     group: root
     mode: '0644'
@@ -63,3 +73,6 @@
     - common-session
     - common-session-noninteractive
     - su
+  tags:
+    - pam
+    - config

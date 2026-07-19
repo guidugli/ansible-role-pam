@@ -1,5 +1,38 @@
 ---
-- name: Verify audit role
+- name: Verify pam role
   hosts: all
   gather_facts: true
   tasks:
+    - name: Check pwquality configuration exists
+      ansible.builtin.stat:
+        path: /etc/security/pwquality.conf
+      register: pam_pwquality_conf
+      tags:
+        - pam
+        - validate
+
+    - name: Assert pwquality configuration exists
+      ansible.builtin.assert:
+        that:
+          - pam_pwquality_conf.stat.exists
+        quiet: true
+      tags:
+        - pam
+        - validate
+
+    - name: Check pwhistory configuration exists
+      ansible.builtin.stat:
+        path: /etc/security/pwhistory.conf
+      register: pam_pwhistory_conf
+      tags:
+        - pam
+        - validate
+
+    - name: Assert pwhistory configuration exists
+      ansible.builtin.assert:
+        that:
+          - pam_pwhistory_conf.stat.exists
+        quiet: true
+      tags:
+        - pam
+        - validate
