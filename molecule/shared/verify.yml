@@ -285,7 +285,7 @@
             ~ (debian_common_password.content | b64decode)
           }}
       ansible.builtin.assert:
-        that: >-
+        that:
           - debian_stack_text |
             regex_search('deny=|unlock_time=|fail_interval=|remember=|minlen=|difok=|maxrepeat=') is none
         quiet: true
@@ -303,7 +303,7 @@
             ~ (fedora_password_auth.content | b64decode)
           }}
       ansible.builtin.assert:
-        that: >-
+        that:
           - fedora_stack_text |
             regex_search('deny=|unlock_time=|fail_interval=|remember=|minlen=|difok=|maxrepeat=') is none
         quiet: true
