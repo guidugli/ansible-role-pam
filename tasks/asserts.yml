@@ -34,7 +34,7 @@
       - pam_auth_update_profiles is iterable
       - auth_deny_after | int >= 1
       - auth_deny_after | int <= 5
-      - auth_unlock_time | int == 0 or auth_unlock_time | int >= 900
+      - auth_unlock_time | int >= 0
       - auth_unlock_time | int <= 604800
       - auth_remember | int >= 24
       - auth_min_length | int >= 14
