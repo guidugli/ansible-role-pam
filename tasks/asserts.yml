@@ -36,8 +36,8 @@
       - auth_deny_after | int <= 5
       - auth_unlock_time | int >= 0
       - auth_unlock_time | int <= 604800
-      - auth_remember | int >= 24
-      - auth_min_length | int >= 14
+      - auth_remember | int >= 0
+      - auth_min_length | int >= 12
       - auth_difok is none or auth_difok | int >= 2
       - auth_maxrepeat is none or (auth_maxrepeat | int >= 1 and auth_maxrepeat | int <= 3)
       - auth_maxsequence is none or (auth_maxsequence | int >= 1 and auth_maxsequence | int <= 3)
